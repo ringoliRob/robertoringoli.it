@@ -1,10 +1,11 @@
 @import url("https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Manrope:wght@400;500;600;700;800&display=swap");
 
 :root {
-  --ink: #f6f4ed;
-  --muted: rgba(228, 237, 246, 0.62);
-  --glass: rgba(8, 18, 34, 0.68);
-  --line: rgba(220, 236, 249, 0.16);
+  font-family: "Manrope", sans-serif;
+  color: #f8f5ef;
+  background: #06101e;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
 }
 
 * {
@@ -12,16 +13,14 @@
 }
 
 html,
-body {
+body,
+#root {
   width: 100%;
   min-height: 100%;
   margin: 0;
-  background: #071426;
 }
 
 body {
-  color: var(--ink);
-  font-family: "Manrope", sans-serif;
   overflow: hidden;
 }
 
@@ -30,7 +29,7 @@ button {
   font: inherit;
 }
 
-.world-shell {
+.island-shell {
   position: relative;
   width: 100vw;
   height: 100svh;
@@ -38,400 +37,432 @@ button {
   overflow: hidden;
   isolation: isolate;
   background:
-    radial-gradient(circle at 52% 38%, rgba(42, 85, 117, 0.32), transparent 32%),
-    radial-gradient(circle at 20% 80%, rgba(70, 42, 105, 0.22), transparent 35%),
-    linear-gradient(155deg, #09182c 0%, #071221 48%, #050b16 100%);
+    radial-gradient(circle at 50% 36%, rgba(32, 79, 105, 0.38), transparent 34%),
+    radial-gradient(circle at 12% 88%, rgba(77, 33, 110, 0.3), transparent 34%),
+    linear-gradient(150deg, #091a2c 0%, #071321 52%, #040a13 100%);
 }
 
-.world-shell::before {
+.island-shell::after {
   position: absolute;
-  z-index: -1;
+  z-index: 1;
   inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.14'/%3E%3C/svg%3E");
+  background:
+    linear-gradient(90deg, rgba(2, 8, 15, 0.34), transparent 32%),
+    linear-gradient(0deg, rgba(2, 8, 15, 0.42), transparent 28%);
   content: "";
-  opacity: 0.18;
   pointer-events: none;
 }
 
-.ambient {
+.island-shell::before {
   position: absolute;
-  z-index: -1;
-  width: 34vw;
-  aspect-ratio: 1;
-  border-radius: 50%;
-  filter: blur(100px);
+  z-index: 1;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.15'/%3E%3C/svg%3E");
+  content: "";
   opacity: 0.12;
   pointer-events: none;
 }
 
-.ambient-one {
-  top: -10%;
-  right: -5%;
-  background: #35d8d1;
-}
-
-.ambient-two {
-  bottom: -18%;
-  left: 22%;
-  background: #ae85ff;
-}
-
-.world-canvas {
+.island-canvas {
   position: absolute;
   z-index: 0;
   inset: 0;
 }
 
-.world-canvas canvas {
+.island-canvas canvas {
   display: block;
   outline: none;
 }
 
-.identity {
+.island-aurora {
   position: absolute;
-  z-index: 5;
-  top: 34px;
-  left: 38px;
+  z-index: -1;
+  width: 38vw;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.16;
+}
+
+.island-aurora--purple {
+  top: -18%;
+  right: -9%;
+  background: #9a43ec;
+}
+
+.island-aurora--aqua {
+  bottom: -26%;
+  left: 30%;
+  background: #2fdfd2;
+}
+
+.brand {
+  position: absolute;
+  z-index: 6;
+  top: 31px;
+  left: 36px;
   display: flex;
   align-items: center;
   gap: 13px;
   pointer-events: none;
 }
 
-.identity-mark {
+.brand-mark {
   display: grid;
-  width: 44px;
-  height: 44px;
+  width: 46px;
+  height: 46px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 50%;
-  background: rgba(8, 18, 34, 0.54);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 15px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.13), transparent),
+    rgba(117, 31, 184, 0.74);
   box-shadow:
-    inset 0 0 22px rgba(115, 217, 255, 0.08),
-    0 10px 38px rgba(0, 0, 0, 0.16);
+    0 14px 40px rgba(97, 29, 146, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
   place-items: center;
-  font-family: "DM Mono", monospace;
-  font-size: 12px;
-  letter-spacing: -0.08em;
+  font-size: 21px;
+  font-weight: 800;
   cursor: pointer;
   pointer-events: auto;
-  backdrop-filter: blur(14px);
+  transform: rotate(-5deg);
+  backdrop-filter: blur(16px);
 }
 
-.identity p,
-.identity span {
+.brand p,
+.brand small {
   margin: 0;
 }
 
-.identity p {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
+.brand p {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
-.identity span {
+.brand p span {
+  color: #bb6cff;
+}
+
+.brand small {
   display: block;
   margin-top: 3px;
-  color: var(--muted);
+  color: rgba(228, 238, 246, 0.5);
   font-family: "DM Mono", monospace;
-  font-size: 9px;
-  letter-spacing: 0.09em;
+  font-size: 8px;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
 }
 
-.intro {
+.island-intro {
   position: absolute;
-  z-index: 2;
+  z-index: 4;
   top: 50%;
-  left: 7.2vw;
-  width: min(510px, 38vw);
-  transform: translateY(-55%);
+  left: 6.8vw;
+  width: min(580px, 43vw);
+  transform: translateY(-53%);
   transition:
-    opacity 0.45s ease,
-    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.42s ease,
+    transform 0.62s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
 }
 
-.intro::before {
+.island-intro::before {
   position: absolute;
   z-index: -1;
-  inset: -70px -55px;
+  inset: -70px -70px;
   background: radial-gradient(
-    ellipse at 35% 50%,
-    rgba(5, 12, 23, 0.84) 0%,
-    rgba(5, 12, 23, 0.5) 47%,
+    ellipse at 38% 50%,
+    rgba(4, 11, 21, 0.88),
+    rgba(4, 11, 21, 0.56) 48%,
     transparent 76%
   );
   content: "";
-  pointer-events: none;
 }
 
-.intro--hidden {
+.island-intro--hidden {
   opacity: 0;
-  transform: translate(-35px, -55%);
+  transform: translate(-35px, -53%);
 }
 
-.intro-kicker,
-.panel-eyebrow {
-  margin: 0 0 18px;
-  color: #83dcf2;
+.island-kicker,
+.card-eyebrow {
+  margin: 0 0 16px;
+  color: #58ead7;
   font-family: "DM Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.16em;
+  font-size: 9px;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
-.intro h1 {
+.island-intro h1 {
   margin: 0;
-  font-size: clamp(39px, 4.5vw, 76px);
+  font-size: clamp(46px, 5.2vw, 82px);
   font-weight: 600;
-  letter-spacing: -0.065em;
-  line-height: 0.98;
+  letter-spacing: -0.07em;
+  line-height: 0.96;
 }
 
-.intro h1 em {
+.island-intro h1 em {
   color: transparent;
   font-family: Georgia, serif;
   font-weight: 400;
-  -webkit-text-stroke: 1px rgba(238, 245, 249, 0.8);
+  -webkit-text-stroke: 1px rgba(238, 246, 248, 0.85);
 }
 
-.intro-copy {
-  width: min(420px, 90%);
-  margin: 24px 0 0;
-  color: var(--muted);
-  font-size: 13px;
+.island-intro > p:last-child {
+  width: min(410px, 88%);
+  margin: 23px 0 0;
+  color: rgba(224, 235, 242, 0.64);
+  font-size: 12px;
   line-height: 1.75;
 }
 
-.island-panel {
+.attraction-card {
   position: absolute;
-  z-index: 6;
+  z-index: 7;
   top: 50%;
   right: 4.5vw;
-  width: min(390px, 32vw);
-  padding: 34px 34px 30px;
+  width: min(390px, 31vw);
+  padding: 34px 34px 29px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 24px;
   background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 35%),
-    var(--glass);
+    linear-gradient(145deg, rgba(255, 255, 255, 0.1), transparent 36%),
+    rgba(5, 14, 27, 0.76);
   box-shadow:
-    0 28px 80px rgba(0, 0, 0, 0.3),
+    0 32px 90px rgba(0, 0, 0, 0.36),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
   opacity: 0;
-  transform: translate(30px, -48%);
+  transform: translate(34px, -48%);
   transition:
-    opacity 0.4s ease,
-    transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    opacity 0.38s ease,
+    transform 0.58s cubic-bezier(0.16, 1, 0.3, 1);
   pointer-events: none;
-  backdrop-filter: blur(24px) saturate(1.2);
+  backdrop-filter: blur(25px) saturate(1.22);
 }
 
-.island-panel::before {
+.attraction-card::before {
   position: absolute;
   top: 0;
   left: 35px;
-  width: 62px;
+  width: 68px;
   height: 2px;
-  background: var(--panel-accent);
-  box-shadow: 0 0 20px var(--panel-accent);
+  background: var(--attraction-accent);
+  box-shadow: 0 0 24px var(--attraction-accent);
   content: "";
 }
 
-.island-panel--open {
+.attraction-card--open {
   opacity: 1;
   transform: translate(0, -48%);
   pointer-events: auto;
 }
 
-.panel-close {
+.attraction-card--left {
+  right: auto;
+  left: 4.5vw;
+  transform: translate(-34px, -48%);
+}
+
+.attraction-card--left.attraction-card--open {
+  transform: translate(0, -48%);
+}
+
+.card-close {
   position: absolute;
-  top: 20px;
-  right: 20px;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--line);
+  top: 19px;
+  right: 19px;
+  width: 35px;
+  height: 35px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.04);
   cursor: pointer;
 }
 
-.panel-close span {
+.card-close span {
   position: absolute;
   top: 16px;
   left: 10px;
   width: 13px;
   height: 1px;
-  background: var(--ink);
+  background: #fff;
 }
 
-.panel-close span:first-child {
+.card-close span:first-child {
   transform: rotate(45deg);
 }
 
-.panel-close span:last-child {
+.card-close span:last-child {
   transform: rotate(-45deg);
 }
 
-.panel-index {
-  margin-bottom: 38px;
-  color: var(--panel-accent);
+.card-index {
+  margin: 0 0 38px;
+  color: var(--attraction-accent);
   font-family: "DM Mono", monospace;
-  font-size: 11px;
+  font-size: 10px;
 }
 
-.panel-eyebrow {
-  margin-bottom: 11px;
-  color: var(--panel-accent);
+.card-eyebrow {
+  margin-bottom: 10px;
+  color: var(--attraction-accent);
 }
 
-.island-panel h2 {
+.attraction-card h2 {
   margin: 0;
-  font-size: clamp(30px, 3vw, 46px);
+  font-size: clamp(31px, 3vw, 47px);
   font-weight: 600;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.06em;
   line-height: 1;
 }
 
-.panel-lead {
-  margin: 20px 0 0;
-  color: rgba(247, 248, 244, 0.86);
-  font-size: 14px;
-  line-height: 1.65;
+.card-lead {
+  margin: 19px 0 0;
+  color: rgba(246, 247, 242, 0.87);
+  font-size: 13px;
+  line-height: 1.68;
 }
 
-.panel-rule {
+.card-divider {
   height: 1px;
   margin: 24px 0;
-  background: linear-gradient(90deg, var(--panel-accent), transparent);
-  opacity: 0.45;
+  background: linear-gradient(90deg, var(--attraction-accent), transparent);
+  opacity: 0.48;
 }
 
-.panel-detail {
+.card-detail {
   margin: 0;
-  color: var(--muted);
+  color: rgba(224, 235, 242, 0.58);
   font-size: 12px;
-  line-height: 1.7;
+  line-height: 1.72;
 }
 
-.panel-action {
+.card-action {
   display: flex;
   width: 100%;
-  margin-top: 26px;
+  margin-top: 25px;
   padding: 14px 0 0;
   border: 0;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid rgba(255, 255, 255, 0.13);
   background: none;
   justify-content: space-between;
-  color: var(--ink);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
 }
 
-.panel-action span {
-  color: var(--panel-accent);
+.card-action span {
+  color: var(--attraction-accent);
   font-size: 17px;
 }
 
-.atlas {
+.island-map {
   position: absolute;
-  z-index: 7;
-  bottom: 28px;
+  z-index: 8;
+  bottom: 27px;
   left: 50%;
   display: flex;
-  padding: 8px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: rgba(7, 17, 31, 0.72);
-  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.26);
+  height: 58px;
+  padding: 8px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 18px;
+  background: rgba(5, 14, 27, 0.72);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  align-items: center;
+  gap: 4px;
   transform: translateX(-50%);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(22px);
 }
 
-.atlas-label {
-  display: flex;
-  padding: 0 14px;
-  align-items: center;
-  color: rgba(226, 238, 246, 0.42);
+.island-map p {
+  margin: 0;
+  padding: 0 13px 0 7px;
+  color: rgba(229, 239, 244, 0.4);
   font-family: "DM Mono", monospace;
   font-size: 8px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.15em;
   text-transform: uppercase;
 }
 
-.atlas button {
-  display: flex;
-  height: 39px;
-  padding: 0 15px;
+.island-map button {
+  position: relative;
+  display: grid;
+  width: 48px;
+  height: 40px;
+  padding: 0;
   border: 0;
-  border-radius: 10px;
+  border-radius: 11px;
   background: transparent;
-  align-items: center;
-  gap: 8px;
-  color: rgba(241, 245, 246, 0.62);
-  font-size: 10px;
+  place-items: center;
   cursor: pointer;
   transition:
-    color 0.2s ease,
-    background 0.2s ease;
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
-.atlas button:hover,
-.atlas button.active {
-  background: rgba(255, 255, 255, 0.07);
-  color: #fff;
+.island-map button:hover,
+.island-map button.active {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
 }
 
-.atlas-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  box-shadow: 0 0 12px currentColor;
+.island-map button > span {
+  width: 8px;
+  height: 8px;
+  border: 2px solid rgba(255, 255, 255, 0.75);
+  border-radius: 50% 50% 50% 0;
+  background: var(--pin-color);
+  box-shadow: 0 0 16px var(--pin-color);
+  transform: rotate(-45deg);
 }
 
-.atlas-number {
-  color: rgba(237, 243, 246, 0.35);
-  font-family: "DM Mono", monospace;
-  font-size: 8px;
-}
-
-.explore-hint {
+.island-map button small {
   position: absolute;
-  z-index: 3;
-  right: 36px;
-  bottom: 39px;
+  right: 5px;
+  bottom: 3px;
+  color: rgba(235, 242, 246, 0.34);
+  font-family: "DM Mono", monospace;
+  font-size: 6px;
+}
+
+.island-hint {
+  position: absolute;
+  z-index: 5;
+  right: 35px;
+  bottom: 38px;
   display: flex;
   align-items: center;
   gap: 9px;
-  color: rgba(231, 240, 245, 0.42);
+  color: rgba(230, 239, 244, 0.4);
   font-family: "DM Mono", monospace;
-  font-size: 8px;
-  letter-spacing: 0.08em;
+  font-size: 7px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-.mouse {
+.island-hint > span {
   position: relative;
-  width: 15px;
-  height: 22px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 8px;
+  width: 16px;
+  height: 23px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 9px;
 }
 
-.mouse i {
+.island-hint i {
   position: absolute;
   top: 4px;
   left: 6px;
   width: 2px;
-  height: 4px;
-  border-radius: 2px;
+  height: 5px;
+  border-radius: 3px;
   background: #fff;
-  animation: scroll-hint 1.7s ease-in-out infinite;
+  animation: hint-move 1.7s ease-in-out infinite;
 }
 
-@keyframes scroll-hint {
+@keyframes hint-move {
   0%,
   100% {
     opacity: 0.35;
@@ -439,212 +470,233 @@ button {
   }
   50% {
     opacity: 1;
-    transform: translateY(5px);
+    transform: translateY(6px);
   }
 }
 
-.loader {
+.island-loader {
   position: fixed;
   z-index: 20;
   inset: 0;
   display: grid;
-  background: #071426;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(65, 32, 99, 0.3), transparent 30%),
+    #071321;
   align-content: center;
   justify-items: center;
   opacity: 1;
   transition:
-    opacity 0.65s ease 0.15s,
-    visibility 0s linear 0.85s;
+    opacity 0.7s ease 0.15s,
+    visibility 0s linear 0.9s;
 }
 
-.loader--done {
+.island-loader--done {
   visibility: hidden;
   opacity: 0;
 }
 
-.loader-orbit {
+.loader-waterfall {
   position: relative;
-  width: 58px;
+  display: flex;
+  width: 64px;
+  height: 68px;
+  justify-content: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.loader-waterfall i {
+  width: 6px;
   height: 58px;
-  border: 1px solid rgba(107, 220, 243, 0.25);
-  border-radius: 50%;
-  animation: loader-spin 1.4s linear infinite;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #77fff0, rgba(95, 211, 246, 0));
+  animation: loader-flow 1.05s ease-in-out infinite;
 }
 
-.loader-orbit span {
-  position: absolute;
-  top: -4px;
-  left: 25px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #7be4f6;
-  box-shadow: 0 0 22px #7be4f6;
+.loader-waterfall i:nth-child(2) {
+  animation-delay: -0.35s;
 }
 
-.loader p {
-  margin: 20px 0 0;
-  color: var(--muted);
-  font-family: "DM Mono", monospace;
-  font-size: 9px;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
+.loader-waterfall i:nth-child(3) {
+  animation-delay: -0.7s;
 }
 
-@keyframes loader-spin {
-  to {
-    transform: rotate(360deg);
+@keyframes loader-flow {
+  0% {
+    opacity: 0;
+    transform: translateY(-45px);
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(55px);
   }
 }
 
-.webgl-fallback {
+.island-loader p {
+  margin: 16px 0 0;
+  color: rgba(229, 239, 244, 0.56);
+  font-family: "DM Mono", monospace;
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.island-fallback {
   position: absolute;
-  z-index: 4;
+  z-index: 9;
   top: 50%;
   left: 50%;
   width: min(380px, calc(100vw - 40px));
-  padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: var(--glass);
+  padding: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  background: rgba(5, 14, 27, 0.82);
   transform: translate(-50%, -50%);
   text-align: center;
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(20px);
 }
 
-.webgl-fallback p {
-  margin: 5px 0;
-  color: var(--muted);
+.island-fallback h2 {
+  margin: 0 0 8px;
+}
+
+.island-fallback p {
+  margin: 0;
+  color: rgba(229, 239, 244, 0.58);
   font-size: 13px;
 }
 
 @media (max-width: 980px) {
-  .intro {
-    top: 27%;
+  .island-intro {
+    top: 25%;
     left: 28px;
-    width: min(500px, 72vw);
+    width: min(620px, 78vw);
     transform: none;
   }
 
-  .intro::before {
-    inset: -42px -25px;
-    background: radial-gradient(
-      ellipse at 36% 42%,
-      rgba(5, 12, 23, 0.85) 0%,
-      rgba(5, 12, 23, 0.54) 52%,
-      transparent 80%
-    );
-  }
-
-  .intro--hidden {
+  .island-intro--hidden {
     transform: translateY(-20px);
   }
 
-  .intro h1 {
-    font-size: clamp(42px, 8vw, 70px);
+  .island-intro h1 {
+    font-size: clamp(44px, 8vw, 72px);
   }
 
-  .island-panel {
+  .attraction-card {
     top: auto;
     right: 22px;
-    bottom: 98px;
+    left: auto;
+    bottom: 96px;
     width: min(420px, calc(100vw - 44px));
-    transform: translateY(24px);
+    transform: translateY(25px);
   }
 
-  .island-panel--open {
+  .attraction-card--open {
     transform: translateY(0);
   }
 
-  .explore-hint {
+  .island-hint {
     display: none;
   }
 }
 
 @media (max-width: 680px) {
-  .world-shell {
-    min-height: 540px;
+  .island-shell {
+    min-height: 560px;
   }
 
-  .identity {
-    top: 20px;
-    left: 18px;
+  .brand {
+    top: 18px;
+    left: 17px;
   }
 
-  .identity-mark {
-    width: 39px;
-    height: 39px;
+  .brand-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
   }
 
-  .intro {
-    top: 95px;
+  .brand p {
+    font-size: 12px;
+  }
+
+  .island-intro {
+    top: 91px;
     left: 20px;
     width: calc(100vw - 40px);
   }
 
-  .intro-kicker {
-    margin-bottom: 11px;
-    font-size: 8px;
+  .island-intro::before {
+    inset: -40px -24px;
+    background: radial-gradient(
+      ellipse at 34% 45%,
+      rgba(4, 11, 21, 0.9),
+      rgba(4, 11, 21, 0.58) 54%,
+      transparent 82%
+    );
   }
 
-  .intro h1 {
-    font-size: clamp(37px, 12vw, 55px);
+  .island-kicker {
+    margin-bottom: 10px;
+    font-size: 7px;
   }
 
-  .intro-copy {
+  .island-intro h1 {
+    font-size: clamp(39px, 12.5vw, 55px);
+  }
+
+  .island-intro > p:last-child {
     width: min(330px, 90%);
-    margin-top: 16px;
-    font-size: 11px;
-    line-height: 1.6;
+    margin-top: 15px;
+    font-size: 10px;
+    line-height: 1.65;
   }
 
-  .island-panel {
+  .attraction-card {
     right: 12px;
-    bottom: 78px;
+    bottom: 77px;
     width: calc(100vw - 24px);
-    max-height: 58vh;
-    padding: 24px 24px 20px;
+    max-height: 59vh;
+    padding: 23px 23px 20px;
     overflow-y: auto;
     border-radius: 20px;
   }
 
-  .panel-index {
+  .card-index {
     margin-bottom: 19px;
   }
 
-  .island-panel h2 {
+  .attraction-card h2 {
     font-size: 31px;
   }
 
-  .panel-lead {
+  .card-lead {
     margin-top: 14px;
     font-size: 12px;
   }
 
-  .panel-rule {
+  .card-divider {
     margin: 17px 0;
   }
 
-  .atlas {
-    bottom: 12px;
+  .island-map {
+    bottom: 11px;
     width: calc(100vw - 24px);
-    padding: 5px;
-    justify-content: stretch;
-    overflow: hidden;
+    height: 57px;
+    padding: 7px;
+    justify-content: center;
   }
 
-  .atlas-label,
-  .atlas-number {
+  .island-map p {
     display: none;
   }
 
-  .atlas button {
-    height: 42px;
-    min-width: 0;
-    padding: 0 8px;
+  .island-map button {
+    width: auto;
     flex: 1;
-    justify-content: center;
-    font-size: 9px;
   }
 }
 
@@ -652,8 +704,8 @@ button {
   *,
   *::before,
   *::after {
-    scroll-behavior: auto !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
   }
 }

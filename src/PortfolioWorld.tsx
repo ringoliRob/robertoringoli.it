@@ -1,17 +1,14 @@
-"use client";
-
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-type IslandId = "racing" | "milano" | "maldives";
+type AttractionId = "hub" | "blast" | "kebab" | "gp" | "beach";
 
-type IslandContent = {
-  id: IslandId;
-  number: string;
+type AttractionContent = {
+  id: AttractionId;
+  index: string;
   eyebrow: string;
   title: string;
-  shortTitle: string;
   description: string;
   detail: string;
   accent: string;
@@ -19,564 +16,1103 @@ type IslandContent = {
   target: [number, number, number];
 };
 
-const ISLANDS: IslandContent[] = [
+type Walker = {
+  root: THREE.Group;
+  leftLeg: THREE.Group;
+  rightLeg: THREE.Group;
+  leftArm: THREE.Group;
+  rightArm: THREE.Group;
+  path: THREE.CatmullRomCurve3;
+  offset: number;
+  speed: number;
+};
+
+type WaterfallParticles = {
+  points: THREE.Points;
+  positions: Float32Array;
+  top: number;
+  bottom: number;
+};
+
+const ATTRACTIONS: AttractionContent[] = [
   {
-    id: "racing",
-    number: "01",
-    eyebrow: "Motorsport · Mobile game",
-    title: "Pitwall Tycoon",
-    shortTitle: "Il circuito",
+    id: "hub",
+    index: "00",
+    eyebrow: "Il cuore dell’isola",
+    title: "Cazzeggio Hub",
     description:
-      "Una monoposto non vince da sola. Strategia, sviluppo e decisioni al muretto diventano un tycoon mobile.",
+      "La piazza digitale da cui parte tutto: giochi rapidi, sfide quotidiane e una buona scusa per rimandare le cose serie.",
     detail:
-      "Un progetto in evoluzione dedicato alla parte della Formula racing che amo di più: costruire una squadra, leggere la gara e rischiare al momento giusto.",
-    accent: "#ff5c45",
-    camera: [-11, 8, 12],
-    target: [-8.5, 0, 1.5],
+      "Il padiglione centrale raccoglie l’identità del progetto e diventerà l’ingresso verso il sito completo.",
+    accent: "#a855f7",
+    camera: [8, 8, 12],
+    target: [1.4, 1.5, -0.2],
   },
   {
-    id: "milano",
-    number: "02",
-    eyebrow: "Identità · About",
-    title: "Milano, sempre",
-    shortTitle: "La città",
+    id: "blast",
+    index: "01",
+    eyebrow: "Puzzle · Combo",
+    title: "Cazzeggio Blast",
     description:
-      "Il Duomo custodisce la mia storia: chi sono, cosa so fare e la città che continua a ispirarmi.",
+      "Una torre di blocchi colorati, combinazioni e record da migliorare una partita alla volta.",
     detail:
-      "Questa sarà la parte più personale del mondo, con esperienze, competenze, contatti e tutto ciò che non entra in una semplice bio.",
-    accent: "#ba9cff",
-    camera: [0, 7, 5],
-    target: [0, 1, -5.2],
+      "L’attrazione riprende il linguaggio a griglia del gioco e lo trasforma in un monumento luminoso.",
+    accent: "#32d7ff",
+    camera: [-10, 6.5, 5],
+    target: [-3.2, 1.5, -2.4],
   },
   {
-    id: "maldives",
-    number: "03",
-    eyebrow: "Casual gaming · Web",
-    title: "Cazzeggio tropicale",
-    shortTitle: "Le Maldive",
+    id: "kebab",
+    index: "02",
+    eyebrow: "Arcade · Precisione",
+    title: "Kebab Smash",
     description:
-      "Un’isola per giocare senza prendersi troppo sul serio: piccoli giochi, idee veloci e zero dress code.",
+      "Il chiosco più rumoroso dell’isola: mira, martello e un kebab gigante impossibile da ignorare.",
     detail:
-      "Qui prende vita il progetto casual gaming: un posto leggero, immediato e pieno di esperimenti da aprire direttamente dalla spiaggia.",
-    accent: "#39dfc3",
-    camera: [12, 7, 12],
-    target: [8.7, 0, 2.2],
+      "Una piccola attrazione da luna park dedicata alle partite veloci e ai colpi perfetti.",
+    accent: "#ff8a3d",
+    camera: [14, 11, -17],
+    target: [4.55, 1.5, -2.35],
+  },
+  {
+    id: "gp",
+    index: "03",
+    eyebrow: "Racing · Giro veloce",
+    title: "Cazzeggio GP",
+    description:
+      "Un micro-circuito sospeso fra le palme, con monoposto che continuano a inseguire il giro perfetto.",
+    detail:
+      "Questa attrazione racconta il lato competitivo di Cazzeggio e anticipa il mondo motorsport del portfolio.",
+    accent: "#ff4f5e",
+    camera: [-8, 6.8, 12],
+    target: [-1.8, 1.4, 3.8],
+  },
+  {
+    id: "beach",
+    index: "04",
+    eyebrow: "Relax · Social",
+    title: "AFK Beach Club",
+    description:
+      "Amache, ombrelloni e telefono sempre in mano: qui essere AFK è praticamente un lavoro.",
+    detail:
+      "La spiaggia rappresenta la parte sociale e leggera del progetto, con abitanti che passeggiano e giocano.",
+    accent: "#35e0c1",
+    camera: [11, 5.8, 11],
+    target: [6.2, 1.2, 3.4],
   },
 ];
 
-const OVERVIEW_CAMERA = new THREE.Vector3(0, 19, 26);
+const OVERVIEW_CAMERA = new THREE.Vector3(15, 17, 25);
 const OVERVIEW_TARGET = new THREE.Vector3(0, 0, 0);
 
-function tagInteractive(object: THREE.Object3D, islandId: IslandId) {
-  object.traverse((child) => {
-    child.userData.islandId = islandId;
+const palette = {
+  purple: 0x8b24d6,
+  purpleDark: 0x3b1769,
+  sand: 0xf2c982,
+  sandLight: 0xffdfa1,
+  grass: 0x46a36f,
+  grassDark: 0x267154,
+  water: 0x28d8d0,
+  rock: 0x53616c,
+  rockDark: 0x303b49,
+};
+
+function standardMaterial(
+  color: number,
+  options: Partial<THREE.MeshStandardMaterialParameters> = {},
+) {
+  return new THREE.MeshStandardMaterial({
+    color,
+    roughness: 0.78,
+    metalness: 0.02,
+    flatShading: true,
+    ...options,
   });
 }
 
-function createIslandBase(
-  radius: number,
-  topColor: number,
-  rockColor: number,
-) {
-  const group = new THREE.Group();
+function tagAttraction(group: THREE.Object3D, id: AttractionId) {
+  group.userData.attractionRoot = true;
+  group.userData.attractionId = id;
+  group.traverse((child) => {
+    child.userData.attractionId = id;
+  });
+}
 
-  const rock = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius * 0.48, radius * 0.94, 3.4, 9, 3),
-    new THREE.MeshStandardMaterial({
-      color: rockColor,
-      flatShading: true,
-      roughness: 0.9,
+function makeRadialShape(radius: number, points: number, seed: number) {
+  const shape = new THREE.Shape();
+  for (let i = 0; i < points; i += 1) {
+    const angle = (i / points) * Math.PI * 2;
+    const variation =
+      Math.sin(angle * 3 + seed) * 0.06 +
+      Math.sin(angle * 7 + seed * 1.7) * 0.035;
+    const r = radius * (1 + variation);
+    const x = Math.cos(angle) * r;
+    const y = Math.sin(angle) * r * 0.78;
+    if (i === 0) shape.moveTo(x, y);
+    else shape.lineTo(x, y);
+  }
+  shape.closePath();
+  return shape;
+}
+
+function makeLandLayer(
+  radius: number,
+  depth: number,
+  color: number,
+  y: number,
+  seed: number,
+) {
+  const geometry = new THREE.ExtrudeGeometry(makeRadialShape(radius, 48, seed), {
+    depth,
+    bevelEnabled: true,
+    bevelSegments: 2,
+    bevelSize: 0.18,
+    bevelThickness: 0.16,
+    curveSegments: 2,
+  });
+  geometry.rotateX(-Math.PI / 2);
+  geometry.computeVertexNormals();
+  const mesh = new THREE.Mesh(geometry, standardMaterial(color));
+  mesh.position.y = y;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+function createLabel(text: string, accent: string, width = 512) {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = 128;
+  const context = canvas.getContext("2d");
+  if (!context) return new THREE.Sprite();
+
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "rgba(5, 12, 24, .86)";
+  context.beginPath();
+  context.roundRect(8, 16, canvas.width - 16, 94, 28);
+  context.fill();
+  context.strokeStyle = accent;
+  context.lineWidth = 3;
+  context.stroke();
+  context.fillStyle = "#ffffff";
+  context.font = "700 38px Arial";
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  context.fillText(text, canvas.width / 2, 64);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  const sprite = new THREE.Sprite(
+    new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthWrite: false,
     }),
   );
-  rock.position.y = -1.8;
+  sprite.scale.set(width / 100, 1.28, 1);
+  sprite.userData.isAttractionLabel = true;
+  return sprite;
+}
+
+function createPath(points: THREE.Vector3[], color = 0xe7bd79) {
+  const curve = new THREE.CatmullRomCurve3(points, true, "catmullrom", 0.45);
+  const path = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 80, 0.11, 7, true),
+    standardMaterial(color, { roughness: 0.9 }),
+  );
+  path.receiveShadow = true;
+  return { path, curve };
+}
+
+function createPalm(scale = 1, leafColor = 0x36a86f) {
+  const palm = new THREE.Group();
+  const trunk = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.11 * scale, 0.2 * scale, 2.5 * scale, 9),
+    standardMaterial(0x9a6545),
+  );
+  trunk.position.y = 1.25 * scale;
+  trunk.rotation.z = -0.08;
+  trunk.castShadow = true;
+  palm.add(trunk);
+
+  const crown = new THREE.Group();
+  crown.position.set(-0.1 * scale, 2.5 * scale, 0);
+  crown.userData.isPalmCrown = true;
+  const leafMaterial = standardMaterial(leafColor, {
+    side: THREE.DoubleSide,
+    roughness: 0.72,
+  });
+  for (let i = 0; i < 8; i += 1) {
+    const angle = (i / 8) * Math.PI * 2;
+    const leaf = new THREE.Mesh(
+      new THREE.ConeGeometry(0.26 * scale, 1.75 * scale, 5),
+      leafMaterial,
+    );
+    leaf.scale.x = 0.42;
+    leaf.position.set(
+      Math.cos(angle) * 0.66 * scale,
+      0,
+      Math.sin(angle) * 0.66 * scale,
+    );
+    leaf.rotation.z = Math.PI / 2.35;
+    leaf.rotation.y = -angle;
+    leaf.castShadow = true;
+    crown.add(leaf);
+  }
+  palm.add(crown);
+
+  const coconuts = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.17 * scale, 0),
+    standardMaterial(0x6f4632),
+  );
+  coconuts.position.set(0.12 * scale, 2.36 * scale, 0.08 * scale);
+  palm.add(coconuts);
+  return palm;
+}
+
+function createRock(scale = 1, color = palette.rock) {
+  const rock = new THREE.Mesh(
+    new THREE.DodecahedronGeometry(scale, 0),
+    standardMaterial(color),
+  );
+  rock.scale.set(1, 0.72, 0.88);
+  rock.rotation.set(
+    Math.random() * 0.3,
+    Math.random() * Math.PI,
+    Math.random() * 0.25,
+  );
   rock.castShadow = true;
   rock.receiveShadow = true;
-  group.add(rock);
+  return rock;
+}
 
-  const ground = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius * 0.92, 0.72, 12),
-    new THREE.MeshStandardMaterial({
-      color: topColor,
-      flatShading: true,
-      roughness: 0.85,
-    }),
+function createUmbrella(color: number) {
+  const umbrella = new THREE.Group();
+  const pole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035, 0.045, 1.45, 8),
+    standardMaterial(0xf3eadc),
   );
-  ground.position.y = 0;
-  ground.castShadow = true;
-  ground.receiveShadow = true;
-  group.add(ground);
-
-  const crystal = new THREE.Mesh(
-    new THREE.OctahedronGeometry(radius * 0.2, 0),
-    new THREE.MeshStandardMaterial({
-      color: 0x88a9bd,
-      emissive: 0x18344a,
-      flatShading: true,
-      roughness: 0.35,
-    }),
+  pole.position.y = 0.73;
+  umbrella.add(pole);
+  const canopy = new THREE.Mesh(
+    new THREE.ConeGeometry(0.85, 0.38, 12),
+    standardMaterial(color, { side: THREE.DoubleSide }),
   );
-  crystal.scale.y = 1.8;
-  crystal.position.y = -3.65;
-  group.add(crystal);
+  canopy.position.y = 1.45;
+  canopy.castShadow = true;
+  umbrella.add(canopy);
+  return umbrella;
+}
 
+function createLounger(color: number) {
+  const group = new THREE.Group();
+  const fabric = new THREE.Mesh(
+    new THREE.BoxGeometry(0.58, 0.08, 1.35),
+    standardMaterial(color),
+  );
+  fabric.position.y = 0.22;
+  fabric.rotation.x = -0.12;
+  fabric.castShadow = true;
+  group.add(fabric);
+  for (const z of [-0.5, 0.5]) {
+    const leg = new THREE.Mesh(
+      new THREE.BoxGeometry(0.48, 0.28, 0.06),
+      standardMaterial(0xe7dfd3),
+    );
+    leg.position.set(0, 0.08, z);
+    group.add(leg);
+  }
   return group;
 }
 
-function createTree(scale = 1) {
-  const tree = new THREE.Group();
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12 * scale, 0.18 * scale, 1.25 * scale, 6),
-    new THREE.MeshStandardMaterial({ color: 0x73523d, flatShading: true }),
-  );
-  trunk.position.y = 0.65 * scale;
-  trunk.castShadow = true;
-  tree.add(trunk);
-
-  const crownMaterial = new THREE.MeshStandardMaterial({
-    color: 0x2c8767,
-    flatShading: true,
+function createWaterMaterial() {
+  return new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    uniforms: {
+      uTime: { value: 0 },
+      uColorA: { value: new THREE.Color(0x1bc8c5) },
+      uColorB: { value: new THREE.Color(0x76f6e6) },
+    },
+    vertexShader: `
+      uniform float uTime;
+      varying vec2 vUv;
+      varying float vWave;
+      void main() {
+        vUv = uv;
+        vec3 p = position;
+        float wave = sin((p.x + uTime * 0.7) * 1.35) * 0.07
+          + cos((p.y - uTime * 0.55) * 1.8) * 0.045;
+        p.z += wave;
+        vWave = wave;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform vec3 uColorA;
+      uniform vec3 uColorB;
+      varying vec2 vUv;
+      varying float vWave;
+      void main() {
+        float lines = sin((vUv.x + vUv.y) * 34.0 + uTime * 1.5) * 0.5 + 0.5;
+        float shimmer = smoothstep(0.72, 1.0, lines) * 0.16;
+        vec3 color = mix(uColorA, uColorB, 0.42 + vWave * 2.4 + shimmer);
+        gl_FragColor = vec4(color, 0.78);
+      }
+    `,
   });
-  for (let i = 0; i < 3; i += 1) {
-    const crown = new THREE.Mesh(
-      new THREE.ConeGeometry((0.68 - i * 0.12) * scale, 0.95 * scale, 7),
-      crownMaterial,
-    );
-    crown.position.y = (1.25 + i * 0.48) * scale;
-    crown.castShadow = true;
-    tree.add(crown);
-  }
-  return tree;
 }
 
-function createRaceCar(color: number) {
-  const car = new THREE.Group();
-  const bodyMaterial = new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.35,
-    metalness: 0.15,
+function createWaterfall(
+  width: number,
+  height: number,
+  position: THREE.Vector3,
+  rotationY: number,
+) {
+  const group = new THREE.Group();
+  group.position.copy(position);
+  group.rotation.y = rotationY;
+
+  const geometry = new THREE.PlaneGeometry(width, height, 14, 28);
+  const positionAttribute = geometry.getAttribute("position");
+  for (let i = 0; i < positionAttribute.count; i += 1) {
+    const x = positionAttribute.getX(i);
+    const y = positionAttribute.getY(i);
+    const normalized = y / height + 0.5;
+    positionAttribute.setZ(
+      i,
+      Math.sin(x * 2.8) * 0.05 + Math.pow(1 - normalized, 2) * 0.72,
+    );
+  }
+  geometry.computeVertexNormals();
+
+  const material = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+    uniforms: {
+      uTime: { value: 0 },
+      uColor: { value: new THREE.Color(0x61f5ee) },
+    },
+    vertexShader: `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform vec3 uColor;
+      varying vec2 vUv;
+      void main() {
+        float flow = sin(vUv.x * 27.0 + (vUv.y - uTime * 0.8) * 18.0);
+        float ribbons = smoothstep(0.05, 0.95, flow * 0.5 + 0.5);
+        float edge = smoothstep(0.0, 0.15, vUv.x) * smoothstep(1.0, 0.85, vUv.x);
+        float foam = smoothstep(0.78, 1.0, vUv.y) + smoothstep(0.15, 0.0, vUv.y);
+        float alpha = (0.38 + ribbons * 0.32 + foam * 0.22) * edge;
+        gl_FragColor = vec4(mix(uColor, vec3(0.92, 1.0, 1.0), foam * 0.6), alpha);
+      }
+    `,
   });
-  const darkMaterial = new THREE.MeshStandardMaterial({
-    color: 0x111722,
-    roughness: 0.7,
+  const fall = new THREE.Mesh(geometry, material);
+  fall.position.y = -height / 2 + 0.45;
+  group.add(fall);
+
+  const particleCount = 85;
+  const particlePositions = new Float32Array(particleCount * 3);
+  for (let i = 0; i < particleCount; i += 1) {
+    particlePositions[i * 3] = (Math.random() - 0.5) * width * 1.08;
+    particlePositions[i * 3 + 1] = -Math.random() * height + 0.55;
+    particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 0.65;
+  }
+  const particleGeometry = new THREE.BufferGeometry();
+  particleGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(particlePositions, 3),
+  );
+  const points = new THREE.Points(
+    particleGeometry,
+    new THREE.PointsMaterial({
+      color: 0xb9ffff,
+      size: 0.09,
+      transparent: true,
+      opacity: 0.82,
+      depthWrite: false,
+    }),
+  );
+  group.add(points);
+
+  return {
+    group,
+    material,
+    particles: {
+      points,
+      positions: particlePositions,
+      top: 0.55,
+      bottom: -height,
+    } satisfies WaterfallParticles,
+  };
+}
+
+function createHub() {
+  const group = new THREE.Group();
+  group.position.set(0, 1.4, -0.3);
+
+  const base = new THREE.Mesh(
+    new THREE.CylinderGeometry(2.05, 2.25, 0.38, 16),
+    standardMaterial(0xe8dcf3),
+  );
+  base.position.y = 0.18;
+  base.castShadow = true;
+  group.add(base);
+
+  const building = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.6, 1.8, 1.7, 12),
+    standardMaterial(palette.purple),
+  );
+  building.position.y = 1.18;
+  building.castShadow = true;
+  group.add(building);
+
+  const glass = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.34, 1.5, 1.28, 12),
+    standardMaterial(0x151c38, {
+      emissive: 0x30105d,
+      emissiveIntensity: 0.8,
+      roughness: 0.2,
+      metalness: 0.15,
+    }),
+  );
+  glass.position.y = 1.24;
+  group.add(glass);
+
+  const roof = new THREE.Mesh(
+    new THREE.ConeGeometry(2.15, 0.9, 12),
+    standardMaterial(0xf6f1fb),
+  );
+  roof.position.y = 2.45;
+  roof.castShadow = true;
+  group.add(roof);
+
+  const antenna = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.08, 1.4, 8),
+    standardMaterial(0xe9def3),
+  );
+  antenna.position.y = 3.45;
+  group.add(antenna);
+
+  const signal = new THREE.Mesh(
+    new THREE.TorusGeometry(0.42, 0.035, 8, 32, Math.PI),
+    new THREE.MeshBasicMaterial({ color: 0xcf8bff }),
+  );
+  signal.position.y = 3.82;
+  signal.rotation.z = Math.PI / 2;
+  signal.userData.isSignal = true;
+  group.add(signal);
+
+  const sign = createLabel("CAZZEGGIO", "#a855f7", 620);
+  sign.position.set(0, 3.45, 0.2);
+  sign.scale.multiplyScalar(0.78);
+  group.add(sign);
+
+  const portal = new THREE.Mesh(
+    new THREE.TorusGeometry(0.62, 0.12, 10, 36, Math.PI),
+    standardMaterial(0xffffff, {
+      emissive: 0x9333ea,
+      emissiveIntensity: 1.5,
+    }),
+  );
+  portal.position.set(0, 0.95, 1.55);
+  group.add(portal);
+
+  tagAttraction(group, "hub");
+  return group;
+}
+
+function createBlastTower() {
+  const group = new THREE.Group();
+  group.position.set(-4.65, 1.35, -2.55);
+  const colors = [0x30d5ff, 0x5a63f2, 0xa855f7, 0xff565f, 0xffcf3b, 0x2edd79];
+  const layout = [
+    [-1, 0, 0],
+    [0, 0, 0],
+    [1, 0, 0],
+    [-1, 1, 0],
+    [0, 1, 0],
+    [0, 2, 0],
+    [1, 2, 0],
+    [1, 3, 0],
+    [0, 0, 1],
+    [0, 1, 1],
+  ];
+  layout.forEach(([x, y, z], index) => {
+    const block = new THREE.Mesh(
+      new THREE.BoxGeometry(0.72, 0.72, 0.72),
+      standardMaterial(colors[index % colors.length], {
+        emissive: colors[index % colors.length],
+        emissiveIntensity: 0.1,
+        roughness: 0.35,
+      }),
+    );
+    block.position.set(x * 0.76, y * 0.76 + 0.4, z * 0.76);
+    block.castShadow = true;
+    group.add(block);
   });
 
+  const crown = new THREE.Mesh(
+    new THREE.ConeGeometry(0.58, 0.8, 5),
+    standardMaterial(0xffd33d, {
+      emissive: 0xb77300,
+      emissiveIntensity: 0.35,
+    }),
+  );
+  crown.position.set(0.75, 3.65, 0);
+  crown.rotation.z = 0.08;
+  group.add(crown);
+
+  const platform = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.75, 1.95, 0.28, 12),
+    standardMaterial(0x153463),
+  );
+  platform.position.y = 0.05;
+  group.add(platform);
+
+  const label = createLabel("BLAST", "#32d7ff", 360);
+  label.position.set(0, 3.6, 0.4);
+  label.scale.multiplyScalar(0.62);
+  group.add(label);
+
+  tagAttraction(group, "blast");
+  return group;
+}
+
+function createKebabBooth() {
+  const group = new THREE.Group();
+  group.position.set(4.55, 1.32, -2.35);
+
+  const booth = new THREE.Mesh(
+    new THREE.BoxGeometry(2.6, 1.15, 1.55),
+    standardMaterial(0xa44f2d),
+  );
+  booth.position.y = 0.58;
+  booth.castShadow = true;
+  group.add(booth);
+
+  const awning = new THREE.Mesh(
+    new THREE.BoxGeometry(2.9, 0.18, 1.85),
+    standardMaterial(0xff8a3d),
+  );
+  awning.position.y = 1.35;
+  group.add(awning);
+
+  const kebab = new THREE.Group();
+  const skewer = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035, 0.035, 3.4, 8),
+    standardMaterial(0xd9d9d9, { metalness: 0.6, roughness: 0.28 }),
+  );
+  skewer.position.y = 1.7;
+  kebab.add(skewer);
+  for (let i = 0; i < 7; i += 1) {
+    const layer = new THREE.Mesh(
+      new THREE.CylinderGeometry(
+        0.55 - i * 0.035,
+        0.5 - i * 0.025,
+        0.34,
+        9,
+      ),
+      standardMaterial(i % 2 ? 0xcc5d2c : 0xe48339),
+    );
+    layer.position.y = 0.62 + i * 0.32;
+    layer.rotation.y = i * 0.36;
+    layer.castShadow = true;
+    kebab.add(layer);
+  }
+  kebab.position.set(0.35, 1.25, 0);
+  kebab.userData.isKebab = true;
+  group.add(kebab);
+
+  const hammer = new THREE.Group();
+  const handle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.07, 0.09, 1.3, 8),
+    standardMaterial(0x7a4c32),
+  );
+  handle.position.y = 0.65;
+  hammer.add(handle);
+  const head = new THREE.Mesh(
+    new THREE.BoxGeometry(0.78, 0.42, 0.48),
+    standardMaterial(0x30333c, { metalness: 0.35 }),
+  );
+  head.position.y = 1.35;
+  hammer.add(head);
+  hammer.position.set(-0.95, 1.2, 0.45);
+  hammer.rotation.z = -0.55;
+  hammer.userData.isHammer = true;
+  group.add(hammer);
+
+  const label = createLabel("KEBAB SMASH", "#ff8a3d", 520);
+  label.position.set(0, 3.8, 0);
+  label.scale.multiplyScalar(0.62);
+  group.add(label);
+
+  tagAttraction(group, "kebab");
+  return group;
+}
+
+function createTinyCar(color: number) {
+  const car = new THREE.Group();
   const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.25, 0.12, 0.72),
-    bodyMaterial,
+    new THREE.BoxGeometry(0.28, 0.13, 0.66),
+    standardMaterial(color, { roughness: 0.35 }),
   );
   body.position.y = 0.13;
-  body.castShadow = true;
   car.add(body);
-
   const nose = new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, 0.08, 0.42),
-    bodyMaterial,
+    new THREE.BoxGeometry(0.13, 0.08, 0.38),
+    standardMaterial(color, { roughness: 0.35 }),
   );
   nose.position.set(0, 0.1, 0.48);
   car.add(nose);
-
   const wing = new THREE.Mesh(
-    new THREE.BoxGeometry(0.48, 0.045, 0.12),
-    darkMaterial,
+    new THREE.BoxGeometry(0.5, 0.05, 0.1),
+    standardMaterial(0x161921),
   );
-  wing.position.set(0, 0.11, 0.68);
+  wing.position.set(0, 0.12, 0.7);
   car.add(wing);
-
-  const cockpit = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 8, 6),
-    darkMaterial,
-  );
-  cockpit.scale.set(1, 0.6, 1.35);
-  cockpit.position.set(0, 0.22, -0.05);
-  car.add(cockpit);
-
   for (const x of [-0.2, 0.2]) {
-    for (const z of [-0.24, 0.3]) {
+    for (const z of [-0.22, 0.28]) {
       const wheel = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.1, 0.1, 0.075, 8),
-        darkMaterial,
+        new THREE.CylinderGeometry(0.1, 0.1, 0.08, 8),
+        standardMaterial(0x111318),
       );
       wheel.rotation.z = Math.PI / 2;
       wheel.position.set(x, 0.1, z);
       car.add(wheel);
     }
   }
-
   return car;
 }
 
-function createRacingIsland() {
-  const island = createIslandBase(5.2, 0x8aaa6a, 0x5a5460);
-  island.position.set(-8.5, 0, 1.5);
-
+function createGpAttraction() {
+  const group = new THREE.Group();
+  group.position.set(-3.35, 1.28, 3.85);
   const trackPoints = [
-    new THREE.Vector3(-3.55, 0.47, -0.9),
-    new THREE.Vector3(-2.7, 0.47, -2.45),
-    new THREE.Vector3(-0.2, 0.47, -2.75),
-    new THREE.Vector3(2.65, 0.47, -2.15),
-    new THREE.Vector3(3.7, 0.47, -0.55),
-    new THREE.Vector3(3.1, 0.47, 1.15),
-    new THREE.Vector3(1.3, 0.47, 1.65),
-    new THREE.Vector3(0.3, 0.47, 2.75),
-    new THREE.Vector3(-2.15, 0.47, 2.45),
-    new THREE.Vector3(-3.7, 0.47, 1.05),
+    new THREE.Vector3(-2.1, 0.25, -0.6),
+    new THREE.Vector3(-1.3, 0.25, -1.45),
+    new THREE.Vector3(0.5, 0.25, -1.4),
+    new THREE.Vector3(2.05, 0.25, -0.55),
+    new THREE.Vector3(1.65, 0.25, 1.0),
+    new THREE.Vector3(0.25, 0.25, 1.45),
+    new THREE.Vector3(-1.65, 0.25, 1.05),
   ];
-  const curve = new THREE.CatmullRomCurve3(trackPoints, true, "catmullrom", 0.35);
-  const roadMaterial = new THREE.MeshStandardMaterial({
-    color: 0x252a34,
-    roughness: 0.92,
-  });
-  const curbRed = new THREE.MeshStandardMaterial({ color: 0xff584f });
-  const curbWhite = new THREE.MeshStandardMaterial({ color: 0xf4eee6 });
-  const segmentGeometry = new THREE.BoxGeometry(0.96, 0.12, 0.56);
-
-  for (let i = 0; i < 72; i += 1) {
-    const t = i / 72;
+  const curve = new THREE.CatmullRomCurve3(
+    trackPoints,
+    true,
+    "catmullrom",
+    0.45,
+  );
+  const roadMaterial = standardMaterial(0x262b34, { roughness: 0.95 });
+  for (let i = 0; i < 58; i += 1) {
+    const t = i / 58;
     const point = curve.getPointAt(t);
     const tangent = curve.getTangentAt(t);
-    const road = new THREE.Mesh(segmentGeometry, roadMaterial);
+    const road = new THREE.Mesh(
+      new THREE.BoxGeometry(0.72, 0.1, 0.42),
+      roadMaterial,
+    );
     road.position.copy(point);
     road.rotation.y = Math.atan2(tangent.x, tangent.z);
-    road.castShadow = true;
     road.receiveShadow = true;
-    island.add(road);
-
-    if (i % 2 === 0) {
+    group.add(road);
+    if (i % 3 === 0) {
+      const curb = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 0.04, 0.4),
+        standardMaterial(i % 2 ? 0xffffff : 0xff4f5e),
+      );
       const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-      for (const side of [-1, 1]) {
-        const curb = new THREE.Mesh(
-          new THREE.BoxGeometry(0.22, 0.055, 0.52),
-          i % 4 === 0 ? curbRed : curbWhite,
-        );
-        curb.position.copy(point).addScaledVector(normal, side * 0.57);
-        curb.position.y += 0.05;
-        curb.rotation.y = road.rotation.y;
-        island.add(curb);
-      }
+      curb.position.copy(point).addScaledVector(normal, 0.42);
+      curb.position.y += 0.07;
+      curb.rotation.y = road.rotation.y;
+      group.add(curb);
     }
   }
 
-  const pit = new THREE.Mesh(
-    new THREE.BoxGeometry(1.8, 0.62, 0.85),
-    new THREE.MeshStandardMaterial({ color: 0xe8e2d7, flatShading: true }),
-  );
-  pit.position.set(-0.5, 0.75, -1.15);
-  pit.castShadow = true;
-  island.add(pit);
-
-  const pitRoof = new THREE.Mesh(
-    new THREE.BoxGeometry(2.05, 0.13, 1.05),
-    new THREE.MeshStandardMaterial({ color: 0xff5c45 }),
-  );
-  pitRoof.position.set(-0.5, 1.13, -1.15);
-  island.add(pitRoof);
-
-  const cars = [
-    createRaceCar(0xff5c45),
-    createRaceCar(0xf0d85c),
-    createRaceCar(0x67d5ff),
-    createRaceCar(0xf4f1ea),
-  ];
+  const cars = [createTinyCar(0xff4f5e), createTinyCar(0x4dd8ff)];
   cars.forEach((car, index) => {
-    car.userData.offset = index / cars.length;
-    car.userData.speed = 0.035 + index * 0.0025;
-    island.add(car);
+    car.userData.gpOffset = index * 0.5;
+    group.add(car);
   });
+  group.userData.gpCurve = curve;
+  group.userData.gpCars = cars;
 
-  for (const [x, z, scale] of [
-    [-3.8, -2.5, 0.7],
-    [3.5, 2.2, 0.65],
-    [-2.7, 2.9, 0.55],
-  ] as const) {
-    const tree = createTree(scale);
-    tree.position.set(x, 0.42, z);
-    island.add(tree);
+  const gantry = new THREE.Mesh(
+    new THREE.BoxGeometry(1.5, 0.22, 0.18),
+    standardMaterial(0xffffff),
+  );
+  gantry.position.set(-0.65, 1.3, -1.15);
+  group.add(gantry);
+  for (const x of [-1.3, 0]) {
+    const support = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 1.25, 0.12),
+      standardMaterial(0xffffff),
+    );
+    support.position.set(x, 0.7, -1.15);
+    group.add(support);
   }
 
-  tagInteractive(island, "racing");
-  return { island, curve, cars };
+  const label = createLabel("CAZZEGGIO GP", "#ff4f5e", 520);
+  label.position.set(0, 2.45, 0);
+  label.scale.multiplyScalar(0.58);
+  group.add(label);
+  tagAttraction(group, "gp");
+  return group;
 }
 
-function createMilanoIsland() {
-  const island = createIslandBase(4.4, 0xc5b3d4, 0x59506c);
-  island.position.set(0, 0, -5.2);
+function createBeachClub() {
+  const group = new THREE.Group();
+  group.position.set(4.75, 1.08, 3.45);
 
-  const stone = new THREE.MeshStandardMaterial({
-    color: 0xe6e0dc,
-    roughness: 0.82,
-    flatShading: true,
-  });
-  const windowMaterial = new THREE.MeshStandardMaterial({
-    color: 0x343149,
-    emissive: 0x17172b,
-  });
-
-  const cathedral = new THREE.Group();
-  const base = new THREE.Mesh(new THREE.BoxGeometry(3.25, 0.42, 2.3), stone);
-  base.position.y = 0.62;
-  base.castShadow = true;
-  cathedral.add(base);
-
-  const nave = new THREE.Mesh(new THREE.BoxGeometry(2.75, 1.55, 1.7), stone);
-  nave.position.y = 1.55;
-  nave.castShadow = true;
-  cathedral.add(nave);
-
-  const upper = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.9, 1.35), stone);
-  upper.position.y = 2.65;
-  upper.castShadow = true;
-  cathedral.add(upper);
-
-  const facade = new THREE.Mesh(new THREE.BoxGeometry(3.05, 2.15, 0.32), stone);
-  facade.position.set(0, 1.75, 1.02);
-  facade.castShadow = true;
-  cathedral.add(facade);
-
-  for (const x of [-1.05, -0.52, 0, 0.52, 1.05]) {
-    const window = new THREE.Mesh(
-      new THREE.BoxGeometry(0.2, 0.65, 0.05),
-      windowMaterial,
-    );
-    window.position.set(x, 1.75, 1.2);
-    cathedral.add(window);
-  }
-
-  const spirePositions: [number, number, number, number][] = [
-    [-1.35, 3.35, 0.75, 0.55],
-    [1.35, 3.35, 0.75, 0.55],
-    [-1.1, 2.75, -0.7, 0.45],
-    [1.1, 2.75, -0.7, 0.45],
-    [-0.55, 3.4, 0, 0.55],
-    [0.55, 3.4, 0, 0.55],
-    [0, 4.15, 0, 0.85],
-  ];
-  spirePositions.forEach(([x, y, z, scale]) => {
-    const spire = new THREE.Mesh(
-      new THREE.ConeGeometry(0.22 * scale, 1.65 * scale, 7),
-      stone,
-    );
-    spire.position.set(x, y, z);
-    spire.castShadow = true;
-    cathedral.add(spire);
-  });
-
-  island.add(cathedral);
-
-  for (const [x, z, scale] of [
-    [-3.1, 0.2, 0.7],
-    [2.8, -1.5, 0.58],
-    [2.75, 1.7, 0.7],
-  ] as const) {
-    const tree = createTree(scale);
-    tree.position.set(x, 0.42, z);
-    island.add(tree);
-  }
-
-  tagInteractive(island, "milano");
-  return island;
-}
-
-function createPalmTree(scale = 1) {
-  const palm = new THREE.Group();
-  const trunkMaterial = new THREE.MeshStandardMaterial({
-    color: 0x9f6948,
-    flatShading: true,
-  });
-  const leafMaterial = new THREE.MeshStandardMaterial({
-    color: 0x2faf7f,
-    flatShading: true,
-    side: THREE.DoubleSide,
-  });
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.1 * scale, 0.16 * scale, 1.8 * scale, 7),
-    trunkMaterial,
+  const tikiBar = new THREE.Mesh(
+    new THREE.BoxGeometry(2.2, 1.0, 1.15),
+    standardMaterial(0xb76c3f),
   );
-  trunk.position.y = 0.9 * scale;
-  trunk.rotation.z = -0.12;
-  trunk.castShadow = true;
-  palm.add(trunk);
-
-  for (let i = 0; i < 7; i += 1) {
-    const leaf = new THREE.Mesh(
-      new THREE.ConeGeometry(0.22 * scale, 1.35 * scale, 5),
-      leafMaterial,
-    );
-    leaf.scale.x = 0.38;
-    leaf.position.set(
-      Math.cos((i / 7) * Math.PI * 2) * 0.48 * scale,
-      1.88 * scale,
-      Math.sin((i / 7) * Math.PI * 2) * 0.48 * scale,
-    );
-    leaf.rotation.z = Math.PI / 2.5;
-    leaf.rotation.y = -(i / 7) * Math.PI * 2;
-    palm.add(leaf);
-  }
-  return palm;
-}
-
-function createMaldivesIsland() {
-  const island = createIslandBase(4.65, 0xf1cc83, 0x536b72);
-  island.position.set(8.7, 0, 2.2);
-
-  const water = new THREE.Mesh(
-    new THREE.RingGeometry(3.25, 5.25, 64),
-    new THREE.MeshStandardMaterial({
-      color: 0x35d8d1,
-      transparent: true,
-      opacity: 0.65,
-      roughness: 0.28,
-      metalness: 0.12,
-      side: THREE.DoubleSide,
-    }),
-  );
-  water.rotation.x = -Math.PI / 2;
-  water.position.y = 0.45;
-  water.userData.isWater = true;
-  island.add(water);
-
-  const lagoon = new THREE.Mesh(
-    new THREE.CircleGeometry(3.28, 48),
-    new THREE.MeshStandardMaterial({
-      color: 0x36cfc5,
-      transparent: true,
-      opacity: 0.78,
-      roughness: 0.2,
-    }),
-  );
-  lagoon.rotation.x = -Math.PI / 2;
-  lagoon.position.y = 0.43;
-  lagoon.userData.isWater = true;
-  island.add(lagoon);
-
-  const sand = new THREE.Mesh(
-    new THREE.CircleGeometry(2.75, 11),
-    new THREE.MeshStandardMaterial({
-      color: 0xffdd98,
-      flatShading: true,
-      roughness: 0.9,
-    }),
-  );
-  sand.rotation.x = -Math.PI / 2;
-  sand.position.set(0.2, 0.5, 0.1);
-  sand.scale.set(1.15, 0.78, 1);
-  sand.receiveShadow = true;
-  island.add(sand);
-
-  for (const [x, z, scale, rotation] of [
-    [-1.55, 0.65, 1, 0.15],
-    [1.35, -0.75, 0.86, -0.35],
-    [1.65, 0.95, 0.7, 0.42],
-  ] as const) {
-    const palm = createPalmTree(scale);
-    palm.position.set(x, 0.5, z);
-    palm.rotation.y = rotation;
-    island.add(palm);
-  }
-
-  const hut = new THREE.Mesh(
-    new THREE.BoxGeometry(1.05, 0.8, 0.8),
-    new THREE.MeshStandardMaterial({ color: 0xef7a66, flatShading: true }),
-  );
-  hut.position.set(-0.2, 0.92, -0.8);
-  hut.castShadow = true;
-  island.add(hut);
-
+  tikiBar.position.y = 0.5;
+  tikiBar.castShadow = true;
+  group.add(tikiBar);
   const roof = new THREE.Mesh(
-    new THREE.ConeGeometry(0.9, 0.6, 4),
-    new THREE.MeshStandardMaterial({ color: 0x74524c, flatShading: true }),
+    new THREE.ConeGeometry(1.65, 0.65, 4),
+    standardMaterial(0x6e4a35),
   );
   roof.rotation.y = Math.PI / 4;
-  roof.position.set(-0.2, 1.6, -0.8);
-  island.add(roof);
+  roof.position.y = 1.45;
+  group.add(roof);
 
-  const arcade = new THREE.Group();
-  const cabinet = new THREE.Mesh(
-    new THREE.BoxGeometry(0.55, 1.05, 0.48),
-    new THREE.MeshStandardMaterial({ color: 0x59479b, flatShading: true }),
-  );
-  cabinet.position.y = 0.52;
-  cabinet.castShadow = true;
-  arcade.add(cabinet);
-  const screen = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.36, 0.28),
-    new THREE.MeshStandardMaterial({
-      color: 0x68f7da,
-      emissive: 0x1a8f85,
-      emissiveIntensity: 1.2,
-    }),
-  );
-  screen.position.set(0, 0.7, 0.245);
-  arcade.add(screen);
-  arcade.position.set(0.75, 0.5, 0.75);
-  arcade.rotation.y = -0.45;
-  island.add(arcade);
+  const neon = createLabel("AFK CLUB", "#35e0c1", 420);
+  neon.position.set(0, 2.55, 0.2);
+  neon.scale.multiplyScalar(0.54);
+  group.add(neon);
 
-  tagInteractive(island, "maldives");
-  return island;
+  const umbrellaA = createUmbrella(0x35e0c1);
+  umbrellaA.position.set(-1.9, 0, 1);
+  group.add(umbrellaA);
+  const umbrellaB = createUmbrella(0xff5b79);
+  umbrellaB.position.set(1.8, 0, 1.2);
+  group.add(umbrellaB);
+
+  const loungerA = createLounger(0xf8f3eb);
+  loungerA.position.set(-1.8, 0, 2.1);
+  loungerA.rotation.y = -0.25;
+  group.add(loungerA);
+  const loungerB = createLounger(0xf8f3eb);
+  loungerB.position.set(1.6, 0, 2.2);
+  loungerB.rotation.y = 0.2;
+  group.add(loungerB);
+
+  const ball = new THREE.Mesh(
+    new THREE.SphereGeometry(0.22, 12, 8),
+    standardMaterial(0xfff2d6),
+  );
+  ball.position.set(0.8, 0.23, 2.65);
+  group.add(ball);
+
+  tagAttraction(group, "beach");
+  return group;
 }
 
-function createCentralCore() {
-  const core = new THREE.Group();
-  const halo = new THREE.Mesh(
-    new THREE.TorusGeometry(1.35, 0.035, 8, 72),
-    new THREE.MeshBasicMaterial({
-      color: 0x8de8ff,
-      transparent: true,
-      opacity: 0.42,
-    }),
-  );
-  halo.rotation.x = Math.PI / 2;
-  core.add(halo);
+function createPerson(index: number) {
+  const root = new THREE.Group();
+  const skinColors = [0xf0b38f, 0xc98663, 0x8f5b44, 0xf4c5a5];
+  const shirtColors = [0x8b24d6, 0x28c7c1, 0xff6b58, 0xf1ca45, 0x4389ff];
+  const skin = standardMaterial(skinColors[index % skinColors.length]);
+  const shirt = standardMaterial(shirtColors[index % shirtColors.length]);
+  const dark = standardMaterial(index % 2 ? 0x20263b : 0x45315a);
 
-  const orb = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.62, 2),
-    new THREE.MeshStandardMaterial({
-      color: 0xc9f4ff,
-      emissive: 0x4ba4c6,
-      emissiveIntensity: 1.8,
+  const body = new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.28, 0.55, 5, 8),
+    shirt,
+  );
+  body.position.y = 1.05;
+  body.castShadow = true;
+  root.add(body);
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 8), skin);
+  head.position.y = 1.72;
+  head.castShadow = true;
+  root.add(head);
+
+  const hair = new THREE.Mesh(
+    new THREE.SphereGeometry(0.26, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.52),
+    standardMaterial(index % 3 === 0 ? 0x2a1b18 : 0x4a3024),
+  );
+  hair.position.y = 1.76;
+  root.add(hair);
+
+  const leftLeg = new THREE.Group();
+  const rightLeg = new THREE.Group();
+  for (const [leg, x] of [
+    [leftLeg, -0.13],
+    [rightLeg, 0.13],
+  ] as const) {
+    const limb = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.075, 0.5, 4, 7),
+      dark,
+    );
+    limb.position.y = -0.3;
+    leg.position.set(x, 0.62, 0);
+    leg.add(limb);
+    root.add(leg);
+  }
+
+  const leftArm = new THREE.Group();
+  const rightArm = new THREE.Group();
+  for (const [arm, x] of [
+    [leftArm, -0.35],
+    [rightArm, 0.35],
+  ] as const) {
+    const limb = new THREE.Mesh(
+      new THREE.CapsuleGeometry(0.06, 0.42, 4, 7),
+      skin,
+    );
+    limb.position.y = -0.24;
+    arm.position.set(x, 1.35, 0);
+    arm.rotation.x = -0.82;
+    arm.rotation.z = x > 0 ? 0.25 : -0.25;
+    arm.add(limb);
+    root.add(arm);
+  }
+
+  const phone = new THREE.Mesh(
+    new THREE.BoxGeometry(0.28, 0.46, 0.045),
+    standardMaterial(0x151821, {
+      emissive: 0x276aff,
+      emissiveIntensity: 0.45,
       roughness: 0.25,
-      metalness: 0.15,
     }),
   );
-  orb.userData.isCore = true;
-  core.add(orb);
+  phone.position.set(0, 1.18, 0.43);
+  phone.rotation.x = -0.55;
+  root.add(phone);
 
-  const light = new THREE.PointLight(0x71dfff, 15, 12, 2);
-  core.add(light);
-  core.position.set(0, 2.2, 2.5);
-  return core;
+  root.scale.setScalar(0.72 + (index % 3) * 0.04);
+  return { root, leftLeg, rightLeg, leftArm, rightArm };
 }
 
-function createConnection(
-  from: THREE.Vector3,
-  to: THREE.Vector3,
-  color: number,
-) {
-  const middle = from.clone().lerp(to, 0.5);
-  middle.y += 2.1;
-  const curve = new THREE.QuadraticBezierCurve3(from, middle, to);
-  const geometry = new THREE.TubeGeometry(curve, 40, 0.025, 5, false);
-  return new THREE.Mesh(
-    geometry,
-    new THREE.MeshBasicMaterial({
-      color,
-      transparent: true,
-      opacity: 0.38,
-    }),
+function createCazzeggioIsland() {
+  const island = new THREE.Group();
+
+  const cliff = new THREE.Mesh(
+    new THREE.CylinderGeometry(10.8, 5.6, 5.2, 28, 4),
+    standardMaterial(palette.rock),
   );
+  cliff.scale.z = 0.78;
+  cliff.position.y = -1.9;
+  cliff.castShadow = true;
+  cliff.receiveShadow = true;
+  island.add(cliff);
+
+  const lowerCliff = new THREE.Mesh(
+    new THREE.CylinderGeometry(5.7, 2.0, 3.1, 18, 2),
+    standardMaterial(palette.rockDark),
+  );
+  lowerCliff.scale.z = 0.8;
+  lowerCliff.position.y = -5.6;
+  lowerCliff.castShadow = true;
+  island.add(lowerCliff);
+
+  const waterMaterial = createWaterMaterial();
+  const upperSea = new THREE.Mesh(
+    new THREE.CircleGeometry(10.85, 72),
+    waterMaterial,
+  );
+  upperSea.scale.y = 0.78;
+  upperSea.rotation.x = -Math.PI / 2;
+  upperSea.position.y = 0.78;
+  upperSea.receiveShadow = true;
+  island.add(upperSea);
+
+  const sand = makeLandLayer(9.1, 0.48, palette.sand, 0.82, 2.3);
+  sand.position.x = -0.2;
+  island.add(sand);
+  const grass = makeLandLayer(7.15, 0.68, palette.grass, 1.28, 4.8);
+  grass.position.set(-0.65, 0.03, -0.45);
+  island.add(grass);
+
+  const innerSand = new THREE.Mesh(
+    new THREE.RingGeometry(7.15, 8.5, 64),
+    standardMaterial(palette.sandLight),
+  );
+  innerSand.scale.y = 0.78;
+  innerSand.rotation.x = -Math.PI / 2;
+  innerSand.position.set(-0.2, 1.05, 0);
+  island.add(innerSand);
+
+  const pathResult = createPath(
+    [
+      new THREE.Vector3(-5.8, 1.72, -0.5),
+      new THREE.Vector3(-3.8, 1.72, -4.2),
+      new THREE.Vector3(0, 1.72, -4.5),
+      new THREE.Vector3(4.2, 1.72, -3.7),
+      new THREE.Vector3(6.2, 1.72, 0),
+      new THREE.Vector3(4.3, 1.72, 3.7),
+      new THREE.Vector3(0.2, 1.72, 5.0),
+      new THREE.Vector3(-4.4, 1.72, 3.7),
+    ],
+    0xedd29b,
+  );
+  island.add(pathResult.path);
+
+  const hub = createHub();
+  const blast = createBlastTower();
+  const kebab = createKebabBooth();
+  const gp = createGpAttraction();
+  const beach = createBeachClub();
+  island.add(hub, blast, kebab, gp, beach);
+
+  const palmData = [
+    [-7.1, -3.8, 1.15, 0.2],
+    [-7.8, 1.5, 1.0, -0.35],
+    [-5.7, 4.6, 0.9, 0.4],
+    [0.5, -5.6, 1.1, -0.1],
+    [8.25, -1.25, 1.0, 0.3],
+    [7.6, 1.0, 1.2, -0.4],
+    [6.4, 5.2, 0.88, 0.2],
+    [1.0, 5.8, 0.82, -0.2],
+  ] as const;
+  palmData.forEach(([x, z, scale, rotation]) => {
+    const palm = createPalm(scale);
+    palm.position.set(x, 1.34, z);
+    palm.rotation.y = rotation;
+    island.add(palm);
+  });
+
+  const rockData = [
+    [-9.5, -2.2, 0.85],
+    [-8.9, 3.4, 0.65],
+    [8.9, -2.7, 0.72],
+    [9.4, 2.6, 0.9],
+    [1.5, -6.3, 0.58],
+    [-2.4, 6.1, 0.62],
+  ] as const;
+  rockData.forEach(([x, z, scale]) => {
+    const rock = createRock(scale);
+    rock.position.set(x, 0.98, z);
+    island.add(rock);
+  });
+
+  const waterfalls = [
+    createWaterfall(2.5, 6.4, new THREE.Vector3(9.3, 0.8, -2.6), Math.PI / 2),
+    createWaterfall(2.0, 6.0, new THREE.Vector3(-8.8, 0.8, 3.5), -Math.PI / 2),
+    createWaterfall(2.8, 6.8, new THREE.Vector3(1.0, 0.8, 7.9), 0),
+  ];
+  waterfalls.forEach(({ group }) => island.add(group));
+
+  const foamMaterial = standardMaterial(0xd9ffff, {
+    transparent: true,
+    opacity: 0.7,
+    roughness: 0.2,
+  });
+  for (const [x, z] of [
+    [9.45, -2.6],
+    [-8.95, 3.5],
+    [1.0, 7.95],
+  ] as const) {
+    for (let i = 0; i < 8; i += 1) {
+      const foam = new THREE.Mesh(
+        new THREE.IcosahedronGeometry(0.18 + Math.random() * 0.2, 1),
+        foamMaterial,
+      );
+      foam.position.set(
+        x + (Math.random() - 0.5) * 1.6,
+        0.72 + Math.random() * 0.25,
+        z + (Math.random() - 0.5) * 1.2,
+      );
+      foam.userData.isFoam = true;
+      foam.userData.foamOffset = Math.random() * Math.PI * 2;
+      island.add(foam);
+    }
+  }
+
+  const walkPaths = [
+    new THREE.CatmullRomCurve3(
+      [
+        new THREE.Vector3(-5.7, 1.82, 0.2),
+        new THREE.Vector3(-3.6, 1.82, -3.6),
+        new THREE.Vector3(0, 1.82, -4.2),
+        new THREE.Vector3(4.5, 1.82, -3.2),
+        new THREE.Vector3(5.9, 1.82, 0.4),
+        new THREE.Vector3(3.8, 1.82, 3.4),
+        new THREE.Vector3(0, 1.82, 4.6),
+        new THREE.Vector3(-4.4, 1.82, 3.4),
+      ],
+      true,
+      "catmullrom",
+      0.45,
+    ),
+    new THREE.CatmullRomCurve3(
+      [
+        new THREE.Vector3(-2.7, 1.82, -0.2),
+        new THREE.Vector3(-1.5, 1.82, -2.2),
+        new THREE.Vector3(1.5, 1.82, -2.0),
+        new THREE.Vector3(2.7, 1.82, 0),
+        new THREE.Vector3(1.5, 1.82, 2.2),
+        new THREE.Vector3(-1.8, 1.82, 2.1),
+      ],
+      true,
+      "catmullrom",
+      0.42,
+    ),
+    new THREE.CatmullRomCurve3(
+      [
+        new THREE.Vector3(2.6, 1.45, 4.9),
+        new THREE.Vector3(4.0, 1.45, 5.8),
+        new THREE.Vector3(6.6, 1.45, 4.8),
+        new THREE.Vector3(7.0, 1.45, 2.7),
+        new THREE.Vector3(5.5, 1.45, 1.8),
+        new THREE.Vector3(3.3, 1.45, 2.4),
+      ],
+      true,
+      "catmullrom",
+      0.4,
+    ),
+  ];
+
+  const walkers: Walker[] = [];
+  for (let i = 0; i < 12; i += 1) {
+    const person = createPerson(i);
+    const walker: Walker = {
+      ...person,
+      path: walkPaths[i % walkPaths.length],
+      offset: (i * 0.173) % 1,
+      speed: 0.018 + (i % 4) * 0.0025,
+    };
+    walkers.push(walker);
+    island.add(person.root);
+  }
+
+  return {
+    island,
+    waterMaterial,
+    waterfalls,
+    walkers,
+    attractions: [hub, blast, kebab, gp, beach],
+    gp,
+  };
 }
 
 export default function PortfolioWorld() {
   const mountRef = useRef<HTMLDivElement>(null);
-  const selectIslandRef = useRef<(id: IslandId | null) => void>(() => {});
-  const [selectedId, setSelectedId] = useState<IslandId | null>(null);
+  const selectRef = useRef<(id: AttractionId | null) => void>(() => {});
+  const [selectedId, setSelectedId] = useState<AttractionId | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [webglError, setWebglError] = useState(false);
+  const selected =
+    ATTRACTIONS.find((attraction) => attraction.id === selectedId) ?? null;
 
-  const selected = ISLANDS.find((item) => item.id === selectedId) ?? null;
-
-  const selectIsland = useCallback((id: IslandId | null) => {
-    selectIslandRef.current(id);
+  const selectAttraction = useCallback((id: AttractionId | null) => {
+    selectRef.current(id);
     setSelectedId(id);
   }, []);
 
@@ -598,121 +1134,113 @@ export default function PortfolioWorld() {
     }
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x071426, 0.018);
+    scene.fog = new THREE.FogExp2(0x071321, 0.012);
 
     const camera = new THREE.PerspectiveCamera(
       42,
       mount.clientWidth / mount.clientHeight,
       0.1,
-      120,
+      150,
     );
     camera.position.copy(OVERVIEW_CAMERA);
 
     renderer.setSize(mount.clientWidth, mount.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.65));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.05;
+    renderer.toneMappingExposure = 1.08;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
     mount.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.065;
     controls.enablePan = false;
-    controls.minDistance = 8;
-    controls.maxDistance = 39;
-    controls.minPolarAngle = Math.PI * 0.19;
-    controls.maxPolarAngle = Math.PI * 0.46;
+    controls.minDistance = 9;
+    controls.maxDistance = 38;
+    controls.minPolarAngle = Math.PI * 0.18;
+    controls.maxPolarAngle = Math.PI * 0.47;
     controls.target.copy(OVERVIEW_TARGET);
 
-    const hemisphere = new THREE.HemisphereLight(0x99cfff, 0x211a35, 2.7);
-    scene.add(hemisphere);
-
-    const sun = new THREE.DirectionalLight(0xffe1bf, 4.2);
-    sun.position.set(-12, 20, 10);
+    scene.add(new THREE.HemisphereLight(0xa6dcff, 0x181326, 3.5));
+    const sun = new THREE.DirectionalLight(0xffe0b2, 5.2);
+    sun.position.set(-14, 24, 13);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 60;
-    sun.shadow.camera.left = -24;
-    sun.shadow.camera.right = 24;
-    sun.shadow.camera.top = 24;
-    sun.shadow.camera.bottom = -24;
+    sun.shadow.mapSize.set(1536, 1536);
+    sun.shadow.camera.near = 2;
+    sun.shadow.camera.far = 65;
+    sun.shadow.camera.left = -18;
+    sun.shadow.camera.right = 18;
+    sun.shadow.camera.top = 18;
+    sun.shadow.camera.bottom = -18;
     scene.add(sun);
 
-    const racing = createRacingIsland();
-    const milano = createMilanoIsland();
-    const maldives = createMaldivesIsland();
-    const core = createCentralCore();
-    scene.add(racing.island, milano, maldives, core);
+    const rim = new THREE.DirectionalLight(0x8c65ff, 2.2);
+    rim.position.set(14, 8, -14);
+    scene.add(rim);
 
-    scene.add(
-      createConnection(
-        new THREE.Vector3(-7.1, 0.9, 1.7),
-        new THREE.Vector3(-0.8, 2.2, 2.5),
-        0xff6655,
-      ),
-      createConnection(
-        new THREE.Vector3(0, 0.9, -2.5),
-        new THREE.Vector3(0, 2.2, 1.8),
-        0xba9cff,
-      ),
-      createConnection(
-        new THREE.Vector3(7.2, 0.9, 2.2),
-        new THREE.Vector3(0.8, 2.2, 2.5),
-        0x39dfc3,
-      ),
+    const world = createCazzeggioIsland();
+    scene.add(world.island);
+
+    const lowerMist = new THREE.Mesh(
+      new THREE.CircleGeometry(18, 64),
+      new THREE.MeshBasicMaterial({
+        color: 0x17334b,
+        transparent: true,
+        opacity: 0.3,
+        depthWrite: false,
+      }),
     );
+    lowerMist.rotation.x = -Math.PI / 2;
+    lowerMist.position.y = -8.2;
+    scene.add(lowerMist);
 
-    const starGeometry = new THREE.BufferGeometry();
+    const starsGeometry = new THREE.BufferGeometry();
     const starPositions: number[] = [];
-    for (let i = 0; i < 450; i += 1) {
-      const radius = 28 + Math.random() * 42;
+    for (let i = 0; i < 520; i += 1) {
+      const radius = 34 + Math.random() * 48;
       const angle = Math.random() * Math.PI * 2;
       starPositions.push(
         Math.cos(angle) * radius,
-        -8 + Math.random() * 45,
+        -9 + Math.random() * 52,
         Math.sin(angle) * radius,
       );
     }
-    starGeometry.setAttribute(
+    starsGeometry.setAttribute(
       "position",
       new THREE.Float32BufferAttribute(starPositions, 3),
     );
     const stars = new THREE.Points(
-      starGeometry,
+      starsGeometry,
       new THREE.PointsMaterial({
-        color: 0xd7edff,
-        size: 0.08,
+        color: 0xcfeaff,
+        size: 0.09,
         transparent: true,
-        opacity: 0.72,
+        opacity: 0.68,
       }),
     );
     scene.add(stars);
 
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
-    const clickableRoots = [racing.island, milano, maldives];
-    let hovered: IslandId | null = null;
     let pointerDown = { x: 0, y: 0 };
+    let hovered: AttractionId | null = null;
+    let activeSceneId: AttractionId | null = null;
     let cameraGoal = OVERVIEW_CAMERA.clone();
     let targetGoal = OVERVIEW_TARGET.clone();
-    let selectedSceneId: IslandId | null = null;
 
-    selectIslandRef.current = (id) => {
-      selectedSceneId = id;
-      const content = ISLANDS.find((item) => item.id === id);
+    selectRef.current = (id) => {
+      activeSceneId = id;
+      const content = ATTRACTIONS.find((item) => item.id === id);
       if (content) {
         cameraGoal.set(...content.camera);
         targetGoal.set(...content.target);
-        controls.enabled = false;
       } else {
         cameraGoal.copy(OVERVIEW_CAMERA);
         targetGoal.copy(OVERVIEW_TARGET);
-        controls.enabled = false;
       }
+      controls.enabled = false;
     };
 
     const updatePointer = (event: PointerEvent) => {
@@ -721,24 +1249,25 @@ export default function PortfolioWorld() {
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     };
 
-    const findIsland = () => {
+    const findAttraction = () => {
       raycaster.setFromCamera(pointer, camera);
-      const intersections = raycaster.intersectObjects(clickableRoots, true);
-      return (intersections[0]?.object.userData.islandId ?? null) as
-        | IslandId
+      const intersections = raycaster.intersectObjects(
+        world.attractions,
+        true,
+      );
+      return (intersections[0]?.object.userData.attractionId ?? null) as
+        | AttractionId
         | null;
     };
 
     const onPointerMove = (event: PointerEvent) => {
       updatePointer(event);
-      hovered = findIsland();
+      hovered = findAttraction();
       renderer.domElement.style.cursor = hovered ? "pointer" : "grab";
     };
-
     const onPointerDown = (event: PointerEvent) => {
       pointerDown = { x: event.clientX, y: event.clientY };
     };
-
     const onPointerUp = (event: PointerEvent) => {
       const moved = Math.hypot(
         event.clientX - pointerDown.x,
@@ -746,74 +1275,139 @@ export default function PortfolioWorld() {
       );
       if (moved > 7) return;
       updatePointer(event);
-      const islandId = findIsland();
-      if (islandId) {
-        selectIsland(islandId);
-      }
+      const id = findAttraction();
+      if (id) selectAttraction(id);
     };
 
     renderer.domElement.addEventListener("pointermove", onPointerMove);
     renderer.domElement.addEventListener("pointerdown", onPointerDown);
     renderer.domElement.addEventListener("pointerup", onPointerUp);
 
-    const handleResize = () => {
+    const onResize = () => {
       const width = mount.clientWidth;
       const height = mount.clientHeight;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height, false);
       renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio, width < 700 ? 1.35 : 1.75),
+        Math.min(window.devicePixelRatio, width < 700 ? 1.25 : 1.65),
       );
     };
-    window.addEventListener("resize", handleResize);
+    window.addEventListener("resize", onResize);
 
     const timer = new THREE.Timer();
-    let animationFrame = 0;
     const reduceMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
+    let animationFrame = 0;
 
     const animate = () => {
       timer.update();
       const elapsed = timer.getElapsed();
+      const delta = Math.min(timer.getDelta(), 0.04);
+      const motionScale = reduceMotion ? 0.18 : 1;
 
-      racing.cars.forEach((car) => {
+      world.waterMaterial.uniforms.uTime.value = elapsed * motionScale;
+      world.waterfalls.forEach((waterfall, waterfallIndex) => {
+        waterfall.material.uniforms.uTime.value =
+          elapsed * motionScale + waterfallIndex * 0.7;
+        const attribute = waterfall.particles.points.geometry.getAttribute(
+          "position",
+        ) as THREE.BufferAttribute;
+        for (let i = 0; i < waterfall.particles.positions.length / 3; i += 1) {
+          const yIndex = i * 3 + 1;
+          waterfall.particles.positions[yIndex] -=
+            delta * (2.4 + (i % 7) * 0.16) * motionScale;
+          if (
+            waterfall.particles.positions[yIndex] <
+            waterfall.particles.bottom
+          ) {
+            waterfall.particles.positions[yIndex] =
+              waterfall.particles.top - Math.random() * 0.5;
+          }
+        }
+        attribute.needsUpdate = true;
+      });
+
+      world.walkers.forEach((walker, index) => {
         const t =
-          (elapsed * (reduceMotion ? 0.006 : car.userData.speed) +
-            car.userData.offset) %
+          (elapsed * walker.speed * motionScale + walker.offset) % 1;
+        const point = walker.path.getPointAt(t);
+        const tangent = walker.path.getTangentAt(t);
+        walker.root.position.copy(point);
+        walker.root.rotation.y = Math.atan2(tangent.x, tangent.z);
+        const stride = Math.sin(elapsed * 7.5 + index) * 0.55 * motionScale;
+        walker.leftLeg.rotation.x = stride;
+        walker.rightLeg.rotation.x = -stride;
+        walker.leftArm.rotation.x = -0.82 - stride * 0.12;
+        walker.rightArm.rotation.x = -0.82 + stride * 0.12;
+        walker.root.position.y +=
+          Math.abs(Math.sin(elapsed * 7.5 + index)) * 0.035 * motionScale;
+      });
+
+      const gpCurve = world.gp.userData.gpCurve as THREE.CatmullRomCurve3;
+      const gpCars = world.gp.userData.gpCars as THREE.Group[];
+      gpCars.forEach((car, index) => {
+        const t =
+          (elapsed * (0.055 + index * 0.004) * motionScale +
+            car.userData.gpOffset) %
           1;
-        const point = racing.curve.getPointAt(t);
-        const tangent = racing.curve.getTangentAt(t);
+        const point = gpCurve.getPointAt(t);
+        const tangent = gpCurve.getTangentAt(t);
         car.position.copy(point);
         car.position.y += 0.12;
         car.rotation.y = Math.atan2(tangent.x, tangent.z);
       });
 
-      [racing.island, milano, maldives].forEach((island, index) => {
-        const baseY =
-          island === racing.island ? 0 : island === milano ? 0 : 0;
-        island.position.y =
-          baseY + Math.sin(elapsed * 0.5 + index * 1.8) * 0.12;
-        const id = island.children[0]?.userData.islandId as IslandId;
-        const scale = hovered === id ? 1.025 : 1;
-        island.scale.lerp(new THREE.Vector3(scale, scale, scale), 0.08);
+      world.attractions.forEach((attraction) => {
+        const id = attraction.userData.attractionId as AttractionId;
+        const scale = hovered === id ? 1.035 : 1;
+        attraction.scale.lerp(
+          new THREE.Vector3(scale, scale, scale),
+          0.09,
+        );
       });
 
-      core.rotation.y = elapsed * 0.18;
-      const coreOrb = core.children.find((child) => child.userData.isCore);
-      if (coreOrb) {
-        coreOrb.rotation.x = elapsed * 0.24;
-        coreOrb.rotation.z = elapsed * 0.18;
-      }
-
-      maldives.traverse((child) => {
-        if (child.userData.isWater) {
-          child.rotation.z = Math.sin(elapsed * 0.28) * 0.025;
+      world.island.traverse((object) => {
+        if (object.userData.isPalmCrown) {
+          object.rotation.z =
+            Math.sin(elapsed * 0.8 + object.id) * 0.025 * motionScale;
+        }
+        if (object.userData.isFoam) {
+          object.position.y +=
+            Math.sin(elapsed * 1.8 + object.userData.foamOffset) *
+            0.0006 *
+            motionScale;
+        }
+        if (object.userData.isKebab) {
+          object.rotation.y = Math.sin(elapsed * 0.7) * 0.12;
+        }
+        if (object.userData.isHammer) {
+          object.rotation.z =
+            -0.55 + Math.sin(elapsed * 1.15) * 0.08 * motionScale;
+        }
+        if (object.userData.isSignal) {
+          const pulse = 1 + Math.sin(elapsed * 2.2) * 0.08 * motionScale;
+          object.scale.setScalar(pulse);
+        }
+        if (
+          object instanceof THREE.Sprite &&
+          object.userData.isAttractionLabel
+        ) {
+          const ownId = object.userData.attractionId as AttractionId;
+          const labelOpacity =
+            activeSceneId && ownId !== activeSceneId ? 0.08 : 1;
+          object.material.opacity = THREE.MathUtils.lerp(
+            object.material.opacity,
+            labelOpacity,
+            0.12,
+          );
         }
       });
 
-      stars.rotation.y = elapsed * 0.003;
+      stars.rotation.y = elapsed * 0.0025 * motionScale;
+      lowerMist.material.opacity =
+        0.28 + Math.sin(elapsed * 0.4) * 0.035 * motionScale;
 
       if (!controls.enabled) {
         camera.position.lerp(cameraGoal, 0.055);
@@ -825,8 +1419,7 @@ export default function PortfolioWorld() {
           controls.enabled = true;
         }
       }
-
-      if (!selectedSceneId && controls.enabled) {
+      if (!activeSceneId && controls.enabled) {
         cameraGoal.copy(camera.position);
         targetGoal.copy(controls.target);
       }
@@ -837,71 +1430,90 @@ export default function PortfolioWorld() {
     };
 
     animationFrame = requestAnimationFrame(animate);
-    const loadedTimer = window.setTimeout(() => setLoaded(true), 520);
+    const loadTimer = window.setTimeout(() => setLoaded(true), 650);
 
     return () => {
-      window.clearTimeout(loadedTimer);
+      window.clearTimeout(loadTimer);
       cancelAnimationFrame(animationFrame);
-      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("resize", onResize);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       controls.dispose();
       scene.traverse((object) => {
-        if (object instanceof THREE.Mesh) {
+        if (object instanceof THREE.Sprite) {
+          if (object.material.map) object.material.map.dispose();
+          object.material.dispose();
+        } else if (
+          object instanceof THREE.Mesh ||
+          object instanceof THREE.Points
+        ) {
           object.geometry.dispose();
           const materials = Array.isArray(object.material)
             ? object.material
             : [object.material];
-          materials.forEach((material) => material.dispose());
+          materials.forEach((material) => {
+            if ("map" in material && material.map instanceof THREE.Texture) {
+              material.map.dispose();
+            }
+            material.dispose();
+          });
         }
       });
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [selectIsland]);
+  }, [selectAttraction]);
 
   return (
-    <main className="world-shell">
-      <div className="ambient ambient-one" />
-      <div className="ambient ambient-two" />
-      <div ref={mountRef} className="world-canvas" aria-hidden="true" />
+    <main className="island-shell">
+      <div className="island-aurora island-aurora--purple" />
+      <div className="island-aurora island-aurora--aqua" />
+      <div ref={mountRef} className="island-canvas" aria-hidden="true" />
 
-      <header className="identity">
+      <header className="brand">
         <button
-          className="identity-mark"
-          onClick={() => selectIsland(null)}
-          aria-label="Torna alla vista completa"
+          className="brand-mark"
+          onClick={() => selectAttraction(null)}
+          aria-label="Torna alla vista completa dell’isola"
         >
-          RR
+          C
         </button>
         <div>
-          <p>Roberto Ringoli</p>
-          <span>Digital world · v0.1</span>
+          <p>
+            CAZZ<span>EGGIO</span> ISLAND
+          </p>
+          <small>Roberto Ringoli · Project world 01</small>
         </div>
       </header>
 
       <section
-        className={`intro ${selected ? "intro--hidden" : ""}`}
+        className={`island-intro ${selected ? "island-intro--hidden" : ""}`}
         aria-hidden={Boolean(selected)}
       >
-        <p className="intro-kicker">Il mio mondo, in tre coordinate</p>
+        <p className="island-kicker">Benvenuto dove il tempo sparisce</p>
         <h1>
-          Idee da guidare.
+          Perdere tempo,
           <br />
-          Luoghi da <em>esplorare.</em>
+          ma farlo <em>bene.</em>
         </h1>
-        <p className="intro-copy">
-          Ogni isola è una passione diventata progetto. Trascina il mondo,
-          scegli una destinazione e guarda cosa c’è dentro.
+        <p>
+          Un’isola costruita attorno ai giochi di Cazzeggio. Segui gli
+          abitanti, ruota il mondo e scegli un’attrazione.
         </p>
       </section>
 
       <aside
-        className={`island-panel ${selected ? "island-panel--open" : ""}`}
+        className={`attraction-card ${
+          selected ? "attraction-card--open" : ""
+        } ${
+          selectedId === "kebab" || selectedId === "beach"
+            ? "attraction-card--left"
+            : ""
+        }`}
         style={
           selected
-            ? ({ "--panel-accent": selected.accent } as React.CSSProperties)
+            ? ({ "--attraction-accent": selected.accent } as React.CSSProperties)
             : undefined
         }
         aria-live="polite"
@@ -909,63 +1521,64 @@ export default function PortfolioWorld() {
         {selected && (
           <>
             <button
-              className="panel-close"
-              onClick={() => selectIsland(null)}
-              aria-label="Chiudi il progetto"
+              className="card-close"
+              onClick={() => selectAttraction(null)}
+              aria-label="Chiudi la scheda"
             >
               <span />
               <span />
             </button>
-            <div className="panel-index">{selected.number}</div>
-            <p className="panel-eyebrow">{selected.eyebrow}</p>
+            <p className="card-index">{selected.index}</p>
+            <p className="card-eyebrow">{selected.eyebrow}</p>
             <h2>{selected.title}</h2>
-            <p className="panel-lead">{selected.description}</p>
-            <div className="panel-rule" />
-            <p className="panel-detail">{selected.detail}</p>
-            <button className="panel-action" type="button">
-              Esplora il progetto
+            <p className="card-lead">{selected.description}</p>
+            <div className="card-divider" />
+            <p className="card-detail">{selected.detail}</p>
+            <button className="card-action" type="button">
+              Apri il gioco
               <span aria-hidden="true">↗</span>
             </button>
           </>
         )}
       </aside>
 
-      <nav className="atlas" aria-label="Destinazioni del portfolio">
-        <span className="atlas-label">Atlante</span>
-        {ISLANDS.map((island) => (
+      <nav className="island-map" aria-label="Attrazioni dell’isola">
+        <p>Esplora</p>
+        {ATTRACTIONS.map((attraction) => (
           <button
-            key={island.id}
-            className={selectedId === island.id ? "active" : ""}
-            onClick={() => selectIsland(island.id)}
+            key={attraction.id}
+            className={selectedId === attraction.id ? "active" : ""}
+            onClick={() => selectAttraction(attraction.id)}
+            aria-label={attraction.title}
           >
             <span
-              className="atlas-dot"
-              style={{ backgroundColor: island.accent }}
+              style={{ "--pin-color": attraction.accent } as React.CSSProperties}
             />
-            <span className="atlas-number">{island.number}</span>
-            <span>{island.shortTitle}</span>
+            <small>{attraction.index}</small>
           </button>
         ))}
       </nav>
 
-      <div className="explore-hint" aria-hidden="true">
-        <span className="mouse">
+      <div className="island-hint" aria-hidden="true">
+        <span>
           <i />
         </span>
-        Trascina per esplorare
+        Trascina · zooma · scopri
       </div>
 
-      <div className={`loader ${loaded ? "loader--done" : ""}`}>
-        <div className="loader-orbit">
-          <span />
+      <div className={`island-loader ${loaded ? "island-loader--done" : ""}`}>
+        <div className="loader-waterfall">
+          <i />
+          <i />
+          <i />
         </div>
-        <p>Sto costruendo il mondo</p>
+        <p>Sto popolando l’isola</p>
       </div>
 
       {webglError && (
-        <div className="webgl-fallback">
-          <p>Il tuo browser non supporta la scena 3D.</p>
-          <p>Puoi comunque scegliere una destinazione dall’Atlante.</p>
+        <div className="island-fallback">
+          <h2>L’isola non riesce a partire</h2>
+          <p>Questo browser non supporta la scena 3D WebGL.</p>
         </div>
       )}
     </main>
