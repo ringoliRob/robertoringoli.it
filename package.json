@@ -3,13 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "start": "vite preview",
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "next": "latest",
     "react": "latest",
     "react-dom": "latest",
     "three": "latest"
@@ -19,7 +18,9 @@
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@types/three": "latest",
-    "typescript": "^5.9.3"
+    "@vitejs/plugin-react": "latest",
+    "typescript": "^5.9.3",
+    "vite": "latest"
   },
   "overrides": {
     "postcss": "8.5.10"
