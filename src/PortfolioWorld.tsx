@@ -24,9 +24,9 @@ type WorldNode = {
 };
 
 const CENTRAL_POSITION = new THREE.Vector3(-28, 0, 0);
-const CAZZEGGIO_POSITION = new THREE.Vector3(58, 0, 6);
-const OVERVIEW_CAMERA = new THREE.Vector3(122, 92, 160);
-const OVERVIEW_TARGET = new THREE.Vector3(12, -2, 3);
+const CAZZEGGIO_POSITION = new THREE.Vector3(45, 0, 5);
+const OVERVIEW_CAMERA = new THREE.Vector3(105, 82, 145);
+const OVERVIEW_TARGET = new THREE.Vector3(-2, -2, 2);
 
 const WORLD_NODES: WorldNode[] = [
   {
@@ -60,8 +60,8 @@ const WORLD_NODES: WorldNode[] = [
     id: "cazzeggio",
     index: "01",
     accent: "#63ead8",
-    camera: [104, 48, 72],
-    target: [58, 1, 6],
+    camera: [88, 46, 65],
+    target: [45, 1, 5],
     copy: {
       it: {
         eyebrow: "Prima destinazione · Casual gaming",
@@ -185,6 +185,26 @@ function createIslandLabel(text: string, accent: string) {
   return sprite;
 }
 
+function createAtmosphereTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 256;
+  canvas.height = 256;
+  const context = canvas.getContext("2d");
+  if (!context) return new THREE.Texture();
+
+  const gradient = context.createRadialGradient(128, 128, 4, 128, 128, 128);
+  gradient.addColorStop(0, "rgba(255,255,255,.82)");
+  gradient.addColorStop(0.28, "rgba(255,255,255,.42)");
+  gradient.addColorStop(0.62, "rgba(255,255,255,.12)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 256, 256);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
 function prepareIsland(
   source: THREE.Object3D,
   id: WorldNodeId,
@@ -256,7 +276,7 @@ export default function PortfolioWorld() {
     }
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x06111d, 0.0024);
+    scene.fog = new THREE.FogExp2(0x070912, 0.00175);
 
     const camera = new THREE.PerspectiveCamera(
       42,
@@ -285,7 +305,44 @@ export default function PortfolioWorld() {
     controls.maxPolarAngle = Math.PI * 0.52;
     controls.target.copy(OVERVIEW_TARGET);
 
-    scene.add(new THREE.HemisphereLight(0xc7edff, 0x152135, 2.8));
+    const sky = new THREE.Mesh(
+      new THREE.SphereGeometry(430, 48, 32),
+      new THREE.ShaderMaterial({
+        side: THREE.BackSide,
+        depthWrite: false,
+        uniforms: {
+          topColor: { value: new THREE.Color(0x02040d) },
+          horizonColor: { value: new THREE.Color(0x34223f) },
+          lowerColor: { value: new THREE.Color(0x130d18) },
+        },
+        vertexShader: `
+          varying vec3 vWorldPosition;
+          void main() {
+            vWorldPosition = (modelMatrix * vec4(position, 1.0)).xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          varying vec3 vWorldPosition;
+          uniform vec3 topColor;
+          uniform vec3 horizonColor;
+          uniform vec3 lowerColor;
+          void main() {
+            vec3 direction = normalize(vWorldPosition);
+            float heightMix = direction.y * 0.5 + 0.5;
+            vec3 color = mix(lowerColor, horizonColor, smoothstep(0.08, 0.48, heightMix));
+            color = mix(color, topColor, smoothstep(0.48, 0.94, heightMix));
+            float sun = max(dot(direction, normalize(vec3(-0.42, 0.2, -0.88))), 0.0);
+            color += vec3(1.0, 0.34, 0.12) * pow(sun, 95.0) * 2.4;
+            color += vec3(0.22, 0.08, 0.32) * pow(sun, 8.0) * 0.52;
+            gl_FragColor = vec4(color, 1.0);
+          }
+        `,
+      }),
+    );
+    scene.add(sky);
+
+    scene.add(new THREE.HemisphereLight(0xd3d8ff, 0x190f28, 2.45));
     const sun = new THREE.DirectionalLight(0xffddb0, 4.2);
     sun.position.set(-70, 130, 80);
     sun.castShadow = true;
@@ -298,40 +355,70 @@ export default function PortfolioWorld() {
     sun.shadow.camera.bottom = -120;
     scene.add(sun);
 
-    const rim = new THREE.DirectionalLight(0x57ead8, 1.35);
+    const rim = new THREE.DirectionalLight(0x8c6dff, 1.55);
     rim.position.set(135, 65, -120);
     scene.add(rim);
 
-    const ocean = new THREE.Mesh(
-      new THREE.CircleGeometry(310, 160),
-      new THREE.MeshStandardMaterial({
-        color: 0x0a2638,
-        emissive: 0x04131d,
-        emissiveIntensity: 0.55,
-        roughness: 0.28,
-        metalness: 0.06,
-        transparent: true,
-        opacity: 0.93,
-      }),
-    );
-    ocean.rotation.x = -Math.PI / 2;
-    ocean.position.set(25, -12.4, 0);
-    ocean.receiveShadow = true;
-    scene.add(ocean);
+    const atmosphereTexture = createAtmosphereTexture();
+    const cloudSea = new THREE.Group();
+    const cloudColors = [0x667080, 0x473d5e, 0x76506c, 0x9b6c4d];
+    for (let i = 0; i < 86; i += 1) {
+      const cloud = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: atmosphereTexture,
+          color: cloudColors[i % cloudColors.length],
+          transparent: true,
+          opacity: 0.1 + Math.random() * 0.16,
+          depthWrite: false,
+        }),
+      );
+      cloud.position.set(
+        -145 + Math.random() * 300,
+        -25 + Math.random() * 16,
+        -145 + Math.random() * 275,
+      );
+      const width = 32 + Math.random() * 58;
+      cloud.scale.set(width, width * (0.24 + Math.random() * 0.14), 1);
+      cloudSea.add(cloud);
+    }
+    scene.add(cloudSea);
 
-    const oceanGlow = new THREE.Mesh(
-      new THREE.RingGeometry(85, 230, 140),
-      new THREE.MeshBasicMaterial({
-        color: 0x164861,
+    const createIslandGlow = (
+      position: THREE.Vector3,
+      color: number,
+      width: number,
+    ) => {
+      const glow = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: atmosphereTexture,
+          color,
+          transparent: true,
+          opacity: 0.2,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+        }),
+      );
+      glow.position.set(position.x, -14, position.z - 4);
+      glow.scale.set(width, width * 0.52, 1);
+      scene.add(glow);
+      return glow;
+    };
+    const centralGlow = createIslandGlow(CENTRAL_POSITION, 0xff9f45, 96);
+    const cazzeggioGlow = createIslandGlow(CAZZEGGIO_POSITION, 0x55d9c8, 62);
+
+    const distantSun = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: atmosphereTexture,
+        color: 0xff7544,
         transparent: true,
-        opacity: 0.12,
-        side: THREE.DoubleSide,
+        opacity: 0.7,
         depthWrite: false,
+        blending: THREE.AdditiveBlending,
       }),
     );
-    oceanGlow.rotation.x = -Math.PI / 2;
-    oceanGlow.position.set(25, -12.1, 0);
-    scene.add(oceanGlow);
+    distantSun.position.set(-145, 78, -260);
+    distantSun.scale.set(86, 86, 1);
+    scene.add(distantSun);
 
     const starsGeometry = new THREE.BufferGeometry();
     const starPositions: number[] = [];
@@ -511,6 +598,12 @@ export default function PortfolioWorld() {
       centralLabel.position.y = 29 + Math.sin(elapsed * 0.8) * 0.35;
       cazzeggioLabel.position.y = 26 + Math.sin(elapsed * 0.8 + 1.2) * 0.3;
       stars.rotation.y = elapsed * 0.004;
+      cloudSea.position.x = Math.sin(elapsed * 0.055) * 2.4;
+      cloudSea.position.z = Math.cos(elapsed * 0.04) * 1.8;
+      centralGlow.material.opacity = 0.18 + Math.sin(elapsed * 0.7) * 0.035;
+      cazzeggioGlow.material.opacity =
+        0.17 + Math.sin(elapsed * 0.76 + 1.4) * 0.035;
+      distantSun.material.opacity = 0.66 + Math.sin(elapsed * 0.28) * 0.05;
 
       if (cameraTransitioning) {
         camera.position.lerp(cameraGoal, 0.055);

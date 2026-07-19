@@ -3,7 +3,7 @@
 :root {
   font-family: "Manrope", sans-serif;
   color: #f7f4ed;
-  background: #06101c;
+  background: #05040b;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -38,9 +38,9 @@ a {
   overflow: hidden;
   isolation: isolate;
   background:
-    radial-gradient(circle at 38% 40%, rgba(60, 91, 111, 0.34), transparent 34%),
-    radial-gradient(circle at 78% 74%, rgba(25, 96, 98, 0.22), transparent 29%),
-    linear-gradient(150deg, #0b1a29 0%, #07131f 54%, #030912 100%);
+    radial-gradient(circle at 26% 42%, rgba(173, 91, 45, 0.36), transparent 31%),
+    radial-gradient(circle at 73% 68%, rgba(79, 48, 126, 0.32), transparent 34%),
+    linear-gradient(150deg, #120d1a 0%, #090713 52%, #030309 100%);
 }
 
 .archipelago-shell::after {
@@ -88,13 +88,13 @@ a {
 .archipelago-aurora--gold {
   top: -25%;
   left: 11%;
-  background: #c88832;
+  background: #e27235;
 }
 
 .archipelago-aurora--aqua {
   right: -12%;
   bottom: -28%;
-  background: #23cab6;
+  background: #7c4ed0;
 }
 
 .brand {
