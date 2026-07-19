@@ -40,19 +40,19 @@ const WORLD_NODES: WorldNode[] = [
         eyebrow: "Hub centrale · Lanciano",
         title: "Roberto Ringoli",
         description:
-          "Questa è l’isola centrale del mio arcipelago digitale e il punto di accesso a tutto ciò che mi riguarda.",
+          "Studente di Informatica all’Università degli Studi dell’Aquila, nato a San Severo e cresciuto a Lanciano, in Abruzzo.",
         detail:
-          "Qui troverai il mio profilo, le esperienze, i progetti e tutto ciò che mi riguarda. La struttura è pronta per i contenuti che aggiungeremo insieme.",
-        action: "Contenuti in arrivo",
+          "Sono nato il 29 gennaio 2005 e, dopo il liceo scientifico, oggi perdo tempo creando con l’AI i progetti che più mi vengono in mente. Credo che nel 2026 le competenze non siano più soltanto tecniche, ma anche creative: l’intelligenza artificiale ci permette di esprimere questo potenziale. Questo portfolio vuole mostrare ciò che so fare e tutto quello che mi viene in mente di realizzare. BUON VIAGGIO.",
+        action: "Buon viaggio",
       },
       en: {
         eyebrow: "Central hub · Lanciano",
         title: "Roberto Ringoli",
         description:
-          "This is the central island of my digital archipelago and the gateway to everything about me.",
+          "Computer Science student at the University of L’Aquila, born in San Severo and raised in Lanciano, Abruzzo.",
         detail:
-          "This space will contain my profile, experience, projects, and everything about me. The structure is ready for the content we will add together.",
-        action: "Content coming soon",
+          "I was born on January 29, 2005 and, after attending a scientific high school, I now spend my time creating whatever projects come to mind with the help of AI. I believe that in 2026 skills are no longer only technical, but creative too: artificial intelligence allows us to express that potential. This portfolio is meant to show what I can do and everything I imagine building. ENJOY THE JOURNEY.",
+        action: "Enjoy the journey",
       },
     },
   },
@@ -101,7 +101,6 @@ const UI_COPY = {
     hint: "Trascina · zooma · scegli un’isola",
     loading: "Sto preparando le isole",
     closeCard: "Chiudi la scheda",
-    profileStatus: "Profilo in preparazione",
     errorTitle: "L’arcipelago non riesce a partire",
     errorBody: "I modelli 3D non sono riusciti a caricarsi in questo browser.",
   },
@@ -120,7 +119,6 @@ const UI_COPY = {
     hint: "Drag · zoom · choose an island",
     loading: "Preparing the islands",
     closeCard: "Close panel",
-    profileStatus: "Profile in progress",
     errorTitle: "The archipelago could not start",
     errorBody: "The 3D models could not be loaded in this browser.",
   },
@@ -739,8 +737,8 @@ export default function PortfolioWorld() {
             {selected.id === "profile" && (
               <div className="profile-slots">
                 <span>Profilo</span>
-                <span>Esperienze</span>
-                <span>Progetti</span>
+                <span>Creatività</span>
+                <span>AI</span>
               </div>
             )}
 
@@ -760,7 +758,7 @@ export default function PortfolioWorld() {
             ) : (
               <div className="card-pending">
                 <i />
-                {copy.profileStatus}
+                {selectedContent.action}
               </div>
             )}
           </>
