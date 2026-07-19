@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-type AttractionId = "hub" | "blast" | "kebab" | "gp" | "beach";
+type AttractionId =
+  | "hub"
+  | "blast"
+  | "kebab"
+  | "gp"
+  | "beach"
+  | "waterpark"
+  | "amusement";
 
 type AttractionContent = {
   id: AttractionId;
@@ -36,74 +44,48 @@ type WaterfallParticles = {
 
 const ATTRACTIONS: AttractionContent[] = [
   {
-    id: "hub",
-    index: "00",
-    eyebrow: "Il cuore dell’isola",
-    title: "Cazzeggio Hub",
-    description:
-      "La piazza digitale da cui parte tutto: giochi rapidi, sfide quotidiane e una buona scusa per rimandare le cose serie.",
-    detail:
-      "Il padiglione centrale raccoglie l’identità del progetto e diventerà l’ingresso verso il sito completo.",
-    accent: "#a855f7",
-    camera: [8, 8, 12],
-    target: [1.4, 1.5, -0.2],
-  },
-  {
-    id: "blast",
-    index: "01",
-    eyebrow: "Puzzle · Combo",
-    title: "Cazzeggio Blast",
-    description:
-      "Una torre di blocchi colorati, combinazioni e record da migliorare una partita alla volta.",
-    detail:
-      "L’attrazione riprende il linguaggio a griglia del gioco e lo trasforma in un monumento luminoso.",
-    accent: "#32d7ff",
-    camera: [-10, 6.5, 5],
-    target: [-3.2, 1.5, -2.4],
-  },
-  {
-    id: "kebab",
-    index: "02",
-    eyebrow: "Arcade · Precisione",
-    title: "Kebab Smash",
-    description:
-      "Il chiosco più rumoroso dell’isola: mira, martello e un kebab gigante impossibile da ignorare.",
-    detail:
-      "Una piccola attrazione da luna park dedicata alle partite veloci e ai colpi perfetti.",
-    accent: "#ff8a3d",
-    camera: [14, 11, -17],
-    target: [4.55, 1.5, -2.35],
-  },
-  {
-    id: "gp",
-    index: "03",
-    eyebrow: "Racing · Giro veloce",
-    title: "Cazzeggio GP",
-    description:
-      "Un micro-circuito sospeso fra le palme, con monoposto che continuano a inseguire il giro perfetto.",
-    detail:
-      "Questa attrazione racconta il lato competitivo di Cazzeggio e anticipa il mondo motorsport del portfolio.",
-    accent: "#ff4f5e",
-    camera: [-8, 6.8, 12],
-    target: [-1.8, 1.4, 3.8],
-  },
-  {
     id: "beach",
-    index: "04",
-    eyebrow: "Relax · Social",
-    title: "AFK Beach Club",
+    index: "00",
+    eyebrow: "Relax · Maldive",
+    title: "Tropical Beach",
     description:
-      "Amache, ombrelloni e telefono sempre in mano: qui essere AFK è praticamente un lavoro.",
+      "Una grande spiaggia tropicale con cabanas, ombrelloni e una passerella sospesa nel blu.",
     detail:
-      "La spiaggia rappresenta la parte sociale e leggera del progetto, con abitanti che passeggiano e giocano.",
+      "È la parte più calma dell’isola: il punto da cui osservare il mondo, rallentare e scegliere la prossima attrazione.",
     accent: "#35e0c1",
-    camera: [11, 5.8, 11],
-    target: [6.2, 1.2, 3.4],
+    camera: [54, 29, 82],
+    target: [0, 2, 15],
+  },
+  {
+    id: "waterpark",
+    index: "01",
+    eyebrow: "Acqua · Movimento",
+    title: "Water Park",
+    description:
+      "Piscine integrate nell’isola e quattro grandi scivoli che si intrecciano sopra la laguna.",
+    detail:
+      "Le vasche, le cascate e gli scivoli raccontano la parte più fluida e giocosa di questo mondo sospeso.",
+    accent: "#32d7ff",
+    camera: [-58, 38, 48],
+    target: [-16, 5, -6],
+  },
+  {
+    id: "amusement",
+    index: "02",
+    eyebrow: "Luna park · Animazioni",
+    title: "Leisure Park",
+    description:
+      "Montagne russe, ruota panoramica, carosello e autoscontri vivono insieme in un piccolo parco sul mare.",
+    detail:
+      "Tutte le attrazioni usano le animazioni esportate da Blender e vengono riprodotte direttamente da Three.js.",
+    accent: "#ff665a",
+    camera: [64, 38, 38],
+    target: [19, 6, -6],
   },
 ];
 
-const OVERVIEW_CAMERA = new THREE.Vector3(15, 17, 25);
-const OVERVIEW_TARGET = new THREE.Vector3(0, 0, 0);
+const OVERVIEW_CAMERA = new THREE.Vector3(78, 68, 112);
+const OVERVIEW_TARGET = new THREE.Vector3(0, -2, 0);
 
 const palette = {
   purple: 0x8b24d6,
@@ -1134,13 +1116,13 @@ export default function PortfolioWorld() {
     }
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x071321, 0.012);
+    scene.fog = new THREE.FogExp2(0x071321, 0.0032);
 
     const camera = new THREE.PerspectiveCamera(
       42,
       mount.clientWidth / mount.clientHeight,
       0.1,
-      150,
+      420,
     );
     camera.position.copy(OVERVIEW_CAMERA);
 
@@ -1157,53 +1139,123 @@ export default function PortfolioWorld() {
     controls.enableDamping = true;
     controls.dampingFactor = 0.065;
     controls.enablePan = false;
-    controls.minDistance = 9;
-    controls.maxDistance = 38;
+    controls.minDistance = 34;
+    controls.maxDistance = 165;
     controls.minPolarAngle = Math.PI * 0.18;
-    controls.maxPolarAngle = Math.PI * 0.47;
+    controls.maxPolarAngle = Math.PI * 0.49;
     controls.target.copy(OVERVIEW_TARGET);
 
-    scene.add(new THREE.HemisphereLight(0xa6dcff, 0x181326, 3.5));
-    const sun = new THREE.DirectionalLight(0xffe0b2, 5.2);
-    sun.position.set(-14, 24, 13);
+    scene.add(new THREE.HemisphereLight(0xbde7ff, 0x172033, 2.9));
+    const sun = new THREE.DirectionalLight(0xffdfb5, 4.6);
+    sun.position.set(-58, 92, 54);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(1536, 1536);
-    sun.shadow.camera.near = 2;
-    sun.shadow.camera.far = 65;
-    sun.shadow.camera.left = -18;
-    sun.shadow.camera.right = 18;
-    sun.shadow.camera.top = 18;
-    sun.shadow.camera.bottom = -18;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.camera.near = 1;
+    sun.shadow.camera.far = 230;
+    sun.shadow.camera.left = -62;
+    sun.shadow.camera.right = 62;
+    sun.shadow.camera.top = 62;
+    sun.shadow.camera.bottom = -62;
     scene.add(sun);
 
-    const rim = new THREE.DirectionalLight(0x8c65ff, 2.2);
-    rim.position.set(14, 8, -14);
+    const rim = new THREE.DirectionalLight(0x58e7db, 1.65);
+    rim.position.set(62, 35, -58);
     scene.add(rim);
 
-    const world = createCazzeggioIsland();
-    scene.add(world.island);
+    const interactiveMeshes: THREE.Object3D[] = [];
+    let island: THREE.Group | null = null;
+    let mixer: THREE.AnimationMixer | null = null;
+    let disposed = false;
+
+    const attractionIdFromObject = (
+      source: THREE.Object3D,
+    ): AttractionId | null => {
+      let object: THREE.Object3D | null = source;
+      while (object) {
+        const name = object.name.toLowerCase();
+        if (name.includes("02_beach") || name.includes("zone_beach")) {
+          return "beach";
+        }
+        if (
+          name.includes("04_waterpark") ||
+          name.includes("zone_waterpark")
+        ) {
+          return "waterpark";
+        }
+        if (
+          name.includes("05_amusement_park") ||
+          name.includes("zone_amusementpark")
+        ) {
+          return "amusement";
+        }
+        object = object.parent;
+      }
+      return null;
+    };
+
+    const loader = new GLTFLoader();
+    loader.load(
+      "/models/maldives-leisure-island.glb",
+      (gltf) => {
+        if (disposed) return;
+
+        island = gltf.scene;
+        island.name = "Maldives_Leisure_Island";
+        island.traverse((object) => {
+          const id = attractionIdFromObject(object);
+          if (id) object.userData.attractionId = id;
+
+          if (object instanceof THREE.Mesh) {
+            const materials = Array.isArray(object.material)
+              ? object.material
+              : [object.material];
+            object.castShadow = materials.every(
+              (material) => !material.transparent,
+            );
+            object.receiveShadow = true;
+            if (id) interactiveMeshes.push(object);
+          }
+        });
+        scene.add(island);
+
+        mixer = new THREE.AnimationMixer(island);
+        gltf.animations.forEach((clip) => {
+          const action = mixer?.clipAction(clip);
+          action?.setLoop(THREE.LoopRepeat, Infinity);
+          action?.play();
+        });
+
+        setLoaded(true);
+      },
+      undefined,
+      () => {
+        if (disposed) return;
+        setWebglError(true);
+        setLoaded(true);
+      },
+    );
 
     const lowerMist = new THREE.Mesh(
-      new THREE.CircleGeometry(18, 64),
+      new THREE.CircleGeometry(66, 96),
       new THREE.MeshBasicMaterial({
         color: 0x17334b,
         transparent: true,
-        opacity: 0.3,
+        opacity: 0.2,
         depthWrite: false,
       }),
     );
     lowerMist.rotation.x = -Math.PI / 2;
-    lowerMist.position.y = -8.2;
+    lowerMist.position.y = -22;
     scene.add(lowerMist);
 
     const starsGeometry = new THREE.BufferGeometry();
     const starPositions: number[] = [];
     for (let i = 0; i < 520; i += 1) {
-      const radius = 34 + Math.random() * 48;
+      const radius = 90 + Math.random() * 120;
       const angle = Math.random() * Math.PI * 2;
       starPositions.push(
         Math.cos(angle) * radius,
-        -9 + Math.random() * 52,
+        -24 + Math.random() * 135,
         Math.sin(angle) * radius,
       );
     }
@@ -1225,7 +1277,6 @@ export default function PortfolioWorld() {
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let pointerDown = { x: 0, y: 0 };
-    let hovered: AttractionId | null = null;
     let activeSceneId: AttractionId | null = null;
     let cameraGoal = OVERVIEW_CAMERA.clone();
     let targetGoal = OVERVIEW_TARGET.clone();
@@ -1250,11 +1301,9 @@ export default function PortfolioWorld() {
     };
 
     const findAttraction = () => {
+      if (!interactiveMeshes.length) return null;
       raycaster.setFromCamera(pointer, camera);
-      const intersections = raycaster.intersectObjects(
-        world.attractions,
-        true,
-      );
+      const intersections = raycaster.intersectObjects(interactiveMeshes, false);
       return (intersections[0]?.object.userData.attractionId ?? null) as
         | AttractionId
         | null;
@@ -1262,7 +1311,7 @@ export default function PortfolioWorld() {
 
     const onPointerMove = (event: PointerEvent) => {
       updatePointer(event);
-      hovered = findAttraction();
+      const hovered = findAttraction();
       renderer.domElement.style.cursor = hovered ? "pointer" : "grab";
     };
     const onPointerDown = (event: PointerEvent) => {
@@ -1305,109 +1354,13 @@ export default function PortfolioWorld() {
       timer.update();
       const elapsed = timer.getElapsed();
       const delta = Math.min(timer.getDelta(), 0.04);
-      const motionScale = reduceMotion ? 0.18 : 1;
+      const motionScale = reduceMotion ? 0.22 : 1;
 
-      world.waterMaterial.uniforms.uTime.value = elapsed * motionScale;
-      world.waterfalls.forEach((waterfall, waterfallIndex) => {
-        waterfall.material.uniforms.uTime.value =
-          elapsed * motionScale + waterfallIndex * 0.7;
-        const attribute = waterfall.particles.points.geometry.getAttribute(
-          "position",
-        ) as THREE.BufferAttribute;
-        for (let i = 0; i < waterfall.particles.positions.length / 3; i += 1) {
-          const yIndex = i * 3 + 1;
-          waterfall.particles.positions[yIndex] -=
-            delta * (2.4 + (i % 7) * 0.16) * motionScale;
-          if (
-            waterfall.particles.positions[yIndex] <
-            waterfall.particles.bottom
-          ) {
-            waterfall.particles.positions[yIndex] =
-              waterfall.particles.top - Math.random() * 0.5;
-          }
-        }
-        attribute.needsUpdate = true;
-      });
-
-      world.walkers.forEach((walker, index) => {
-        const t =
-          (elapsed * walker.speed * motionScale + walker.offset) % 1;
-        const point = walker.path.getPointAt(t);
-        const tangent = walker.path.getTangentAt(t);
-        walker.root.position.copy(point);
-        walker.root.rotation.y = Math.atan2(tangent.x, tangent.z);
-        const stride = Math.sin(elapsed * 7.5 + index) * 0.55 * motionScale;
-        walker.leftLeg.rotation.x = stride;
-        walker.rightLeg.rotation.x = -stride;
-        walker.leftArm.rotation.x = -0.82 - stride * 0.12;
-        walker.rightArm.rotation.x = -0.82 + stride * 0.12;
-        walker.root.position.y +=
-          Math.abs(Math.sin(elapsed * 7.5 + index)) * 0.035 * motionScale;
-      });
-
-      const gpCurve = world.gp.userData.gpCurve as THREE.CatmullRomCurve3;
-      const gpCars = world.gp.userData.gpCars as THREE.Group[];
-      gpCars.forEach((car, index) => {
-        const t =
-          (elapsed * (0.055 + index * 0.004) * motionScale +
-            car.userData.gpOffset) %
-          1;
-        const point = gpCurve.getPointAt(t);
-        const tangent = gpCurve.getTangentAt(t);
-        car.position.copy(point);
-        car.position.y += 0.12;
-        car.rotation.y = Math.atan2(tangent.x, tangent.z);
-      });
-
-      world.attractions.forEach((attraction) => {
-        const id = attraction.userData.attractionId as AttractionId;
-        const scale = hovered === id ? 1.035 : 1;
-        attraction.scale.lerp(
-          new THREE.Vector3(scale, scale, scale),
-          0.09,
-        );
-      });
-
-      world.island.traverse((object) => {
-        if (object.userData.isPalmCrown) {
-          object.rotation.z =
-            Math.sin(elapsed * 0.8 + object.id) * 0.025 * motionScale;
-        }
-        if (object.userData.isFoam) {
-          object.position.y +=
-            Math.sin(elapsed * 1.8 + object.userData.foamOffset) *
-            0.0006 *
-            motionScale;
-        }
-        if (object.userData.isKebab) {
-          object.rotation.y = Math.sin(elapsed * 0.7) * 0.12;
-        }
-        if (object.userData.isHammer) {
-          object.rotation.z =
-            -0.55 + Math.sin(elapsed * 1.15) * 0.08 * motionScale;
-        }
-        if (object.userData.isSignal) {
-          const pulse = 1 + Math.sin(elapsed * 2.2) * 0.08 * motionScale;
-          object.scale.setScalar(pulse);
-        }
-        if (
-          object instanceof THREE.Sprite &&
-          object.userData.isAttractionLabel
-        ) {
-          const ownId = object.userData.attractionId as AttractionId;
-          const labelOpacity =
-            activeSceneId && ownId !== activeSceneId ? 0.08 : 1;
-          object.material.opacity = THREE.MathUtils.lerp(
-            object.material.opacity,
-            labelOpacity,
-            0.12,
-          );
-        }
-      });
+      mixer?.update(delta * motionScale);
 
       stars.rotation.y = elapsed * 0.0025 * motionScale;
       lowerMist.material.opacity =
-        0.28 + Math.sin(elapsed * 0.4) * 0.035 * motionScale;
+        0.19 + Math.sin(elapsed * 0.4) * 0.025 * motionScale;
 
       if (!controls.enabled) {
         camera.position.lerp(cameraGoal, 0.055);
@@ -1430,10 +1383,9 @@ export default function PortfolioWorld() {
     };
 
     animationFrame = requestAnimationFrame(animate);
-    const loadTimer = window.setTimeout(() => setLoaded(true), 650);
 
     return () => {
-      window.clearTimeout(loadTimer);
+      disposed = true;
       cancelAnimationFrame(animationFrame);
       window.removeEventListener("resize", onResize);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
@@ -1481,9 +1433,9 @@ export default function PortfolioWorld() {
         </button>
         <div>
           <p>
-            CAZZ<span>EGGIO</span> ISLAND
+            LEISURE <span>ISLAND</span>
           </p>
-          <small>Roberto Ringoli · Project world 01</small>
+          <small>Roberto Ringoli · Digital world 01</small>
         </div>
       </header>
 
@@ -1491,15 +1443,15 @@ export default function PortfolioWorld() {
         className={`island-intro ${selected ? "island-intro--hidden" : ""}`}
         aria-hidden={Boolean(selected)}
       >
-        <p className="island-kicker">Benvenuto dove il tempo sparisce</p>
+        <p className="island-kicker">Un mondo sospeso dedicato allo svago</p>
         <h1>
-          Perdere tempo,
+          Esplora, gioca,
           <br />
-          ma farlo <em>bene.</em>
+          poi <em>rallenta.</em>
         </h1>
         <p>
-          Un’isola costruita attorno ai giochi di Cazzeggio. Segui gli
-          abitanti, ruota il mondo e scegli un’attrazione.
+          Una grande isola tropicale animata in Blender e Three.js. Ruota il
+          mondo, avvicinati e scegli una delle tre aree.
         </p>
       </section>
 
@@ -1507,7 +1459,7 @@ export default function PortfolioWorld() {
         className={`attraction-card ${
           selected ? "attraction-card--open" : ""
         } ${
-          selectedId === "kebab" || selectedId === "beach"
+          selectedId === "beach"
             ? "attraction-card--left"
             : ""
         }`}
@@ -1535,7 +1487,7 @@ export default function PortfolioWorld() {
             <div className="card-divider" />
             <p className="card-detail">{selected.detail}</p>
             <button className="card-action" type="button">
-              Apri il gioco
+              Esplora in 3D
               <span aria-hidden="true">↗</span>
             </button>
           </>
@@ -1572,13 +1524,13 @@ export default function PortfolioWorld() {
           <i />
           <i />
         </div>
-        <p>Sto popolando l’isola</p>
+        <p>Sto caricando l’isola 3D</p>
       </div>
 
       {webglError && (
         <div className="island-fallback">
           <h2>L’isola non riesce a partire</h2>
-          <p>Questo browser non supporta la scena 3D WebGL.</p>
+          <p>Il modello 3D non è riuscito a caricarsi in questo browser.</p>
         </div>
       )}
     </main>
