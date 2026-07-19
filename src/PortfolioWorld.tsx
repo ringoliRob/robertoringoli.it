@@ -230,40 +230,6 @@ function createSunRayTexture() {
   return texture;
 }
 
-function createMountainRange(
-  width: number,
-  height: number,
-  color: number,
-  opacity: number,
-  seed: number,
-) {
-  const shape = new THREE.Shape();
-  const base = -34;
-  shape.moveTo(-width / 2, base);
-  const segments = 32;
-  for (let index = 0; index <= segments; index += 1) {
-    const t = index / segments;
-    const x = -width / 2 + t * width;
-    const broad = Math.sin(t * Math.PI * 3.2 + seed) * 0.24 + 0.52;
-    const peaks = Math.abs(Math.sin(t * Math.PI * 9.0 + seed * 1.7)) * 0.34;
-    const ridge = Math.max(0.08, broad + peaks);
-    shape.lineTo(x, base + ridge * height);
-  }
-  shape.lineTo(width / 2, base);
-  shape.closePath();
-
-  return new THREE.Mesh(
-    new THREE.ShapeGeometry(shape),
-    new THREE.MeshBasicMaterial({
-      color,
-      transparent: true,
-      opacity,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    }),
-  );
-}
-
 function createBirdFlock() {
   const flock = new THREE.Group();
   for (let index = 0; index < 9; index += 1) {
@@ -448,23 +414,24 @@ export default function PortfolioWorld() {
     const atmosphereTexture = createAtmosphereTexture();
     const cloudSea = new THREE.Group();
     const cloudColors = [0xe9ddd2, 0xc8d2d8, 0xe4b99e, 0xadbcc6];
-    for (let i = 0; i < 86; i += 1) {
+    for (let i = 0; i < 156; i += 1) {
+      const layer = i % 3;
       const cloud = new THREE.Sprite(
         new THREE.SpriteMaterial({
           map: atmosphereTexture,
           color: cloudColors[i % cloudColors.length],
           transparent: true,
-          opacity: 0.15 + Math.random() * 0.2,
+          opacity: 0.17 + Math.random() * 0.22,
           depthWrite: false,
         }),
       );
       cloud.position.set(
-        -145 + Math.random() * 300,
-        -25 + Math.random() * 16,
-        -145 + Math.random() * 275,
+        -175 + Math.random() * 350,
+        -31 + layer * 6.5 + Math.random() * 8,
+        -175 + Math.random() * 330,
       );
-      const width = 32 + Math.random() * 58;
-      cloud.scale.set(width, width * (0.24 + Math.random() * 0.14), 1);
+      const width = 42 + Math.random() * 76;
+      cloud.scale.set(width, width * (0.25 + Math.random() * 0.16), 1);
       cloudSea.add(cloud);
     }
     scene.add(cloudSea);
@@ -505,16 +472,6 @@ export default function PortfolioWorld() {
     distantSun.position.set(-145, 78, -260);
     distantSun.scale.set(86, 86, 1);
     scene.add(distantSun);
-
-    const mountainBack = createMountainRange(480, 92, 0x7b8790, 0.34, 1.7);
-    mountainBack.position.set(0, -5, -225);
-    scene.add(mountainBack);
-    const mountainMiddle = createMountainRange(410, 72, 0x667782, 0.42, 3.8);
-    mountainMiddle.position.set(-12, -10, -175);
-    scene.add(mountainMiddle);
-    const mountainFront = createMountainRange(350, 54, 0x536770, 0.38, 5.4);
-    mountainFront.position.set(18, -14, -132);
-    scene.add(mountainFront);
 
     const rayTexture = createSunRayTexture();
     const sunRays = new THREE.Group();
