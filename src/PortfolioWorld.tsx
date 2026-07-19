@@ -27,6 +27,22 @@ const CENTRAL_POSITION = new THREE.Vector3(-28, 0, 0);
 const CAZZEGGIO_POSITION = new THREE.Vector3(45, 0, 5);
 const OVERVIEW_CAMERA = new THREE.Vector3(105, 82, 145);
 const OVERVIEW_TARGET = new THREE.Vector3(-2, -2, 2);
+const MOBILE_OVERVIEW_CAMERA = new THREE.Vector3(165, 132, 225);
+const MOBILE_OVERVIEW_TARGET = new THREE.Vector3(-2, -4, 2);
+
+const MOBILE_NODE_VIEWS: Record<
+  WorldNodeId,
+  { camera: [number, number, number]; target: [number, number, number] }
+> = {
+  profile: {
+    camera: [110, 95, 175],
+    target: [-28, -13, 0],
+  },
+  cazzeggio: {
+    camera: [105, 62, 90],
+    target: [45, -8, 5],
+  },
+};
 
 const WORLD_NODES: WorldNode[] = [
   {
@@ -336,7 +352,12 @@ export default function PortfolioWorld() {
       0.1,
       1200,
     );
-    camera.position.copy(OVERVIEW_CAMERA);
+    const startsMobile = mount.clientWidth <= 680;
+    camera.fov = startsMobile ? 50 : 42;
+    camera.position.copy(
+      startsMobile ? MOBILE_OVERVIEW_CAMERA : OVERVIEW_CAMERA,
+    );
+    camera.updateProjectionMatrix();
 
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
@@ -352,10 +373,12 @@ export default function PortfolioWorld() {
     controls.dampingFactor = 0.065;
     controls.enablePan = false;
     controls.minDistance = 48;
-    controls.maxDistance = 280;
+    controls.maxDistance = startsMobile ? 380 : 280;
     controls.minPolarAngle = Math.PI * 0.16;
     controls.maxPolarAngle = Math.PI * 0.52;
-    controls.target.copy(OVERVIEW_TARGET);
+    controls.target.copy(
+      startsMobile ? MOBILE_OVERVIEW_TARGET : OVERVIEW_TARGET,
+    );
 
     const sky = new THREE.Mesh(
       new THREE.SphereGeometry(430, 48, 32),
@@ -604,18 +627,24 @@ export default function PortfolioWorld() {
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let pointerDown = { x: 0, y: 0 };
-    let cameraGoal = OVERVIEW_CAMERA.clone();
-    let targetGoal = OVERVIEW_TARGET.clone();
+    let cameraGoal = (
+      startsMobile ? MOBILE_OVERVIEW_CAMERA : OVERVIEW_CAMERA
+    ).clone();
+    let targetGoal = (
+      startsMobile ? MOBILE_OVERVIEW_TARGET : OVERVIEW_TARGET
+    ).clone();
     let cameraTransitioning = false;
 
     selectRef.current = (id) => {
       const node = WORLD_NODES.find((item) => item.id === id);
+      const mobile = mount.clientWidth <= 680;
       if (node) {
-        cameraGoal.set(...node.camera);
-        targetGoal.set(...node.target);
+        const view = mobile ? MOBILE_NODE_VIEWS[node.id] : node;
+        cameraGoal.set(...view.camera);
+        targetGoal.set(...view.target);
       } else {
-        cameraGoal.copy(OVERVIEW_CAMERA);
-        targetGoal.copy(OVERVIEW_TARGET);
+        cameraGoal.copy(mobile ? MOBILE_OVERVIEW_CAMERA : OVERVIEW_CAMERA);
+        targetGoal.copy(mobile ? MOBILE_OVERVIEW_TARGET : OVERVIEW_TARGET);
       }
       cameraTransitioning = true;
       controls.enabled = false;
@@ -665,6 +694,8 @@ export default function PortfolioWorld() {
       const width = mount.clientWidth;
       const height = mount.clientHeight;
       camera.aspect = width / height;
+      camera.fov = width <= 680 ? 50 : 42;
+      controls.maxDistance = width <= 680 ? 380 : 280;
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
       renderer.setPixelRatio(
