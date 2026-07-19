@@ -3,7 +3,7 @@
 :root {
   font-family: "Manrope", sans-serif;
   color: #f7f4ed;
-  background: #05040b;
+  background: #8ca5b5;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -38,9 +38,9 @@ a {
   overflow: hidden;
   isolation: isolate;
   background:
-    radial-gradient(circle at 26% 42%, rgba(173, 91, 45, 0.36), transparent 31%),
-    radial-gradient(circle at 73% 68%, rgba(79, 48, 126, 0.32), transparent 34%),
-    linear-gradient(150deg, #120d1a 0%, #090713 52%, #030309 100%);
+    radial-gradient(circle at 24% 39%, rgba(255, 189, 132, 0.55), transparent 32%),
+    radial-gradient(circle at 74% 66%, rgba(145, 184, 196, 0.38), transparent 35%),
+    linear-gradient(155deg, #7798b2 0%, #d1a28d 55%, #697b84 100%);
 }
 
 .archipelago-shell::after {
@@ -88,13 +88,13 @@ a {
 .archipelago-aurora--gold {
   top: -25%;
   left: 11%;
-  background: #e27235;
+  background: #ffc078;
 }
 
 .archipelago-aurora--aqua {
   right: -12%;
   bottom: -28%;
-  background: #7c4ed0;
+  background: #a8d6d2;
 }
 
 .brand {
@@ -579,8 +579,8 @@ a {
   inset: 0;
   display: grid;
   background:
-    radial-gradient(circle at 50% 42%, rgba(153, 102, 35, 0.24), transparent 30%),
-    #071321;
+    radial-gradient(circle at 46% 42%, rgba(255, 190, 127, 0.34), transparent 31%),
+    linear-gradient(155deg, #7899b2, #b88f83 58%, #667680);
   align-content: center;
   justify-items: center;
   opacity: 1;

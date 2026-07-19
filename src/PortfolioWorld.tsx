@@ -203,6 +203,94 @@ function createAtmosphereTexture() {
   return texture;
 }
 
+function createSunRayTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 512;
+  const context = canvas.getContext("2d");
+  if (!context) return new THREE.Texture();
+
+  const horizontal = context.createLinearGradient(0, 0, 128, 0);
+  horizontal.addColorStop(0, "rgba(255,255,255,0)");
+  horizontal.addColorStop(0.5, "rgba(255,255,255,.72)");
+  horizontal.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = horizontal;
+  context.fillRect(0, 0, 128, 512);
+  context.globalCompositeOperation = "destination-in";
+  const vertical = context.createLinearGradient(0, 0, 0, 512);
+  vertical.addColorStop(0, "rgba(255,255,255,0)");
+  vertical.addColorStop(0.2, "rgba(255,255,255,.78)");
+  vertical.addColorStop(0.72, "rgba(255,255,255,.34)");
+  vertical.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = vertical;
+  context.fillRect(0, 0, 128, 512);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
+
+function createMountainRange(
+  width: number,
+  height: number,
+  color: number,
+  opacity: number,
+  seed: number,
+) {
+  const shape = new THREE.Shape();
+  const base = -34;
+  shape.moveTo(-width / 2, base);
+  const segments = 32;
+  for (let index = 0; index <= segments; index += 1) {
+    const t = index / segments;
+    const x = -width / 2 + t * width;
+    const broad = Math.sin(t * Math.PI * 3.2 + seed) * 0.24 + 0.52;
+    const peaks = Math.abs(Math.sin(t * Math.PI * 9.0 + seed * 1.7)) * 0.34;
+    const ridge = Math.max(0.08, broad + peaks);
+    shape.lineTo(x, base + ridge * height);
+  }
+  shape.lineTo(width / 2, base);
+  shape.closePath();
+
+  return new THREE.Mesh(
+    new THREE.ShapeGeometry(shape),
+    new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    }),
+  );
+}
+
+function createBirdFlock() {
+  const flock = new THREE.Group();
+  for (let index = 0; index < 9; index += 1) {
+    const geometry = new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(-0.9, 0, 0),
+      new THREE.Vector3(0, 0.38, 0),
+      new THREE.Vector3(0.9, 0, 0),
+    ]);
+    const bird = new THREE.Line(
+      geometry,
+      new THREE.LineBasicMaterial({
+        color: 0x4d4a4b,
+        transparent: true,
+        opacity: 0.52,
+      }),
+    );
+    bird.position.set(
+      -72 + index * 15 + Math.sin(index * 2.1) * 7,
+      44 + Math.sin(index * 1.4) * 10,
+      -92 - (index % 3) * 9,
+    );
+    bird.scale.setScalar(0.75 + (index % 4) * 0.18);
+    flock.add(bird);
+  }
+  return flock;
+}
+
 function prepareIsland(
   source: THREE.Object3D,
   id: WorldNodeId,
@@ -274,7 +362,7 @@ export default function PortfolioWorld() {
     }
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x070912, 0.00175);
+    scene.fog = new THREE.FogExp2(0xc6a58f, 0.00155);
 
     const camera = new THREE.PerspectiveCamera(
       42,
@@ -309,9 +397,9 @@ export default function PortfolioWorld() {
         side: THREE.BackSide,
         depthWrite: false,
         uniforms: {
-          topColor: { value: new THREE.Color(0x02040d) },
-          horizonColor: { value: new THREE.Color(0x34223f) },
-          lowerColor: { value: new THREE.Color(0x130d18) },
+          topColor: { value: new THREE.Color(0x7899b4) },
+          horizonColor: { value: new THREE.Color(0xefb28d) },
+          lowerColor: { value: new THREE.Color(0x69777e) },
         },
         vertexShader: `
           varying vec3 vWorldPosition;
@@ -331,8 +419,8 @@ export default function PortfolioWorld() {
             vec3 color = mix(lowerColor, horizonColor, smoothstep(0.08, 0.48, heightMix));
             color = mix(color, topColor, smoothstep(0.48, 0.94, heightMix));
             float sun = max(dot(direction, normalize(vec3(-0.42, 0.2, -0.88))), 0.0);
-            color += vec3(1.0, 0.34, 0.12) * pow(sun, 95.0) * 2.4;
-            color += vec3(0.22, 0.08, 0.32) * pow(sun, 8.0) * 0.52;
+            color += vec3(1.0, 0.48, 0.24) * pow(sun, 95.0) * 1.65;
+            color += vec3(0.5, 0.2, 0.12) * pow(sun, 8.0) * 0.3;
             gl_FragColor = vec4(color, 1.0);
           }
         `,
@@ -340,8 +428,8 @@ export default function PortfolioWorld() {
     );
     scene.add(sky);
 
-    scene.add(new THREE.HemisphereLight(0xd3d8ff, 0x190f28, 2.45));
-    const sun = new THREE.DirectionalLight(0xffddb0, 4.2);
+    scene.add(new THREE.HemisphereLight(0xe4eff8, 0x5f493d, 2.65));
+    const sun = new THREE.DirectionalLight(0xffd1a1, 4.75);
     sun.position.set(-70, 130, 80);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -353,20 +441,20 @@ export default function PortfolioWorld() {
     sun.shadow.camera.bottom = -120;
     scene.add(sun);
 
-    const rim = new THREE.DirectionalLight(0x8c6dff, 1.55);
+    const rim = new THREE.DirectionalLight(0xa7cee1, 1.15);
     rim.position.set(135, 65, -120);
     scene.add(rim);
 
     const atmosphereTexture = createAtmosphereTexture();
     const cloudSea = new THREE.Group();
-    const cloudColors = [0x667080, 0x473d5e, 0x76506c, 0x9b6c4d];
+    const cloudColors = [0xe9ddd2, 0xc8d2d8, 0xe4b99e, 0xadbcc6];
     for (let i = 0; i < 86; i += 1) {
       const cloud = new THREE.Sprite(
         new THREE.SpriteMaterial({
           map: atmosphereTexture,
           color: cloudColors[i % cloudColors.length],
           transparent: true,
-          opacity: 0.1 + Math.random() * 0.16,
+          opacity: 0.15 + Math.random() * 0.2,
           depthWrite: false,
         }),
       );
@@ -401,13 +489,13 @@ export default function PortfolioWorld() {
       scene.add(glow);
       return glow;
     };
-    const centralGlow = createIslandGlow(CENTRAL_POSITION, 0xff9f45, 96);
-    const cazzeggioGlow = createIslandGlow(CAZZEGGIO_POSITION, 0x55d9c8, 62);
+    const centralGlow = createIslandGlow(CENTRAL_POSITION, 0xffc079, 96);
+    const cazzeggioGlow = createIslandGlow(CAZZEGGIO_POSITION, 0x9edbd2, 62);
 
     const distantSun = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: atmosphereTexture,
-        color: 0xff7544,
+        color: 0xffb16f,
         transparent: true,
         opacity: 0.7,
         depthWrite: false,
@@ -418,32 +506,65 @@ export default function PortfolioWorld() {
     distantSun.scale.set(86, 86, 1);
     scene.add(distantSun);
 
-    const starsGeometry = new THREE.BufferGeometry();
-    const starPositions: number[] = [];
-    for (let i = 0; i < 620; i += 1) {
-      const radius = 150 + Math.random() * 220;
+    const mountainBack = createMountainRange(480, 92, 0x7b8790, 0.34, 1.7);
+    mountainBack.position.set(0, -5, -225);
+    scene.add(mountainBack);
+    const mountainMiddle = createMountainRange(410, 72, 0x667782, 0.42, 3.8);
+    mountainMiddle.position.set(-12, -10, -175);
+    scene.add(mountainMiddle);
+    const mountainFront = createMountainRange(350, 54, 0x536770, 0.38, 5.4);
+    mountainFront.position.set(18, -14, -132);
+    scene.add(mountainFront);
+
+    const rayTexture = createSunRayTexture();
+    const sunRays = new THREE.Group();
+    for (let index = 0; index < 4; index += 1) {
+      const ray = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: rayTexture,
+          color: 0xffd2a5,
+          transparent: true,
+          opacity: 0.075 - index * 0.008,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending,
+          rotation: -0.2 + index * 0.055,
+        }),
+      );
+      ray.position.set(-92 + index * 27, 36, -88 - index * 8);
+      ray.scale.set(24 + index * 5, 165, 1);
+      sunRays.add(ray);
+    }
+    scene.add(sunRays);
+
+    const birds = createBirdFlock();
+    scene.add(birds);
+
+    const motesGeometry = new THREE.BufferGeometry();
+    const motePositions: number[] = [];
+    for (let i = 0; i < 260; i += 1) {
+      const radius = 90 + Math.random() * 190;
       const angle = Math.random() * Math.PI * 2;
-      starPositions.push(
-        25 + Math.cos(angle) * radius,
-        -35 + Math.random() * 230,
+      motePositions.push(
+        Math.cos(angle) * radius,
+        -8 + Math.random() * 145,
         Math.sin(angle) * radius,
       );
     }
-    starsGeometry.setAttribute(
+    motesGeometry.setAttribute(
       "position",
-      new THREE.Float32BufferAttribute(starPositions, 3),
+      new THREE.Float32BufferAttribute(motePositions, 3),
     );
-    const stars = new THREE.Points(
-      starsGeometry,
+    const motes = new THREE.Points(
+      motesGeometry,
       new THREE.PointsMaterial({
-        color: 0xd8efff,
-        size: 0.12,
+        color: 0xffead0,
+        size: 0.17,
         transparent: true,
-        opacity: 0.65,
+        opacity: 0.42,
         depthWrite: false,
       }),
     );
-    scene.add(stars);
+    scene.add(motes);
 
     const centralLabel = createIslandLabel("HUB · LANCIANO", "#f2b84b");
     centralLabel.position.set(CENTRAL_POSITION.x, 29, CENTRAL_POSITION.z);
@@ -605,9 +726,12 @@ export default function PortfolioWorld() {
       animationMixers.forEach((mixer) => mixer.update(delta));
       centralLabel.position.y = 29 + Math.sin(elapsed * 0.8) * 0.35;
       cazzeggioLabel.position.y = 26 + Math.sin(elapsed * 0.8 + 1.2) * 0.3;
-      stars.rotation.y = elapsed * 0.004;
+      motes.rotation.y = elapsed * 0.003;
       cloudSea.position.x = Math.sin(elapsed * 0.055) * 2.4;
       cloudSea.position.z = Math.cos(elapsed * 0.04) * 1.8;
+      sunRays.position.x = Math.sin(elapsed * 0.11) * 1.2;
+      birds.position.x = Math.sin(elapsed * 0.09) * 3.2;
+      birds.position.y = Math.sin(elapsed * 0.35) * 0.7;
       centralGlow.material.opacity = 0.18 + Math.sin(elapsed * 0.7) * 0.035;
       cazzeggioGlow.material.opacity =
         0.17 + Math.sin(elapsed * 0.76 + 1.4) * 0.035;
@@ -645,7 +769,11 @@ export default function PortfolioWorld() {
       });
 
       scene.traverse((object) => {
-        if (object instanceof THREE.Mesh || object instanceof THREE.Points) {
+        if (
+          object instanceof THREE.Mesh ||
+          object instanceof THREE.Points ||
+          object instanceof THREE.Line
+        ) {
           object.geometry.dispose();
           const materials = Array.isArray(object.material)
             ? object.material
