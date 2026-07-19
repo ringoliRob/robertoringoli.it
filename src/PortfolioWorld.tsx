@@ -3,177 +3,137 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
-type AttractionId =
-  | "hub"
-  | "blast"
-  | "kebab"
-  | "gp"
-  | "beach"
-  | "waterpark"
-  | "amusement";
-
 type Language = "it" | "en";
+type WorldNodeId = "profile" | "cazzeggio";
 
-type AttractionCopy = {
+type LocalizedNode = {
   eyebrow: string;
   title: string;
   description: string;
   detail: string;
+  action: string;
 };
 
-type AttractionContent = {
-  id: AttractionId;
+type WorldNode = {
+  id: WorldNodeId;
   index: string;
-  copy: Record<Language, AttractionCopy>;
   accent: string;
+  copy: Record<Language, LocalizedNode>;
   camera: [number, number, number];
   target: [number, number, number];
 };
 
-type Walker = {
-  root: THREE.Group;
-  leftLeg: THREE.Group;
-  rightLeg: THREE.Group;
-  leftArm: THREE.Group;
-  rightArm: THREE.Group;
-  path: THREE.CatmullRomCurve3;
-  offset: number;
-  speed: number;
-};
+const CENTRAL_POSITION = new THREE.Vector3(-30, 0, 0);
+const CAZZEGGIO_POSITION = new THREE.Vector3(88, 0, 8);
+const OVERVIEW_CAMERA = new THREE.Vector3(156, 112, 192);
+const OVERVIEW_TARGET = new THREE.Vector3(27, -2, 3);
 
-type WaterfallParticles = {
-  points: THREE.Points;
-  positions: Float32Array;
-  top: number;
-  bottom: number;
-};
-
-const ATTRACTIONS: AttractionContent[] = [
+const WORLD_NODES: WorldNode[] = [
   {
-    id: "beach",
+    id: "profile",
     index: "00",
+    accent: "#f2b84b",
+    camera: [56, 58, 108],
+    target: [-30, 1, 0],
     copy: {
       it: {
-        eyebrow: "L’idea · Dolce far niente",
-        title: "Perdere tempo",
+        eyebrow: "Hub centrale · Lanciano",
+        title: "Roberto Ringoli",
         description:
-          "Cazzeggio nasce per dare alle persone come me — orgogliosamente fannullone — un posto dove perdere tempo.",
+          "Questa è l’isola centrale del mio arcipelago digitale: il luogo da cui partono tutti i percorsi.",
         detail:
-          "Niente produttività e niente sensi di colpa: solo una spiaggia digitale in cui staccare, curiosare e concedersi una pausa.",
+          "Qui troverai il mio profilo, le esperienze, i progetti e tutto ciò che mi riguarda. La struttura è pronta per i contenuti che aggiungeremo insieme.",
+        action: "Contenuti in arrivo",
       },
       en: {
-        eyebrow: "The idea · Doing nothing",
-        title: "Waste some time",
+        eyebrow: "Central hub · Lanciano",
+        title: "Roberto Ringoli",
         description:
-          "Cazzeggio was born to give people like me — proudly lazy — a place where they can happily waste some time.",
+          "This is the central island of my digital archipelago: the place where every path begins.",
         detail:
-          "No productivity and no guilt: just a digital beach where you can switch off, explore, and take a proper break.",
+          "This space will contain my profile, experience, projects, and everything about me. The structure is ready for the content we will add together.",
+        action: "Content coming soon",
       },
     },
-    accent: "#35e0c1",
-    camera: [54, 29, 82],
-    target: [0, 2, 15],
   },
   {
-    id: "waterpark",
+    id: "cazzeggio",
     index: "01",
+    accent: "#63ead8",
+    camera: [142, 55, 96],
+    target: [88, 1, 8],
     copy: {
       it: {
-        eyebrow: "Il sito · Casual gaming",
-        title: "Giochi senza impegno",
+        eyebrow: "Prima destinazione · Casual gaming",
+        title: "Cazzeggio",
         description:
-          "Una raccolta di casual game immediati, pensati per iniziare in un attimo e restare quanto vuoi.",
+          "L’isola dedicata al tempo perso bene: giochi leggeri, esperimenti e nessuna fretta di concludere qualcosa.",
         detail:
-          "Partite veloci, idee leggere e nuove scuse per cazzeggiare: il parco cresce con giochi ed esperimenti sempre diversi.",
+          "È il primo percorso attivo dell’arcipelago. Altre isole si collegheranno in futuro partendo sempre dall’hub centrale.",
+        action: "Visita Cazzeggio",
       },
       en: {
-        eyebrow: "The website · Casual gaming",
-        title: "Games, no commitment",
+        eyebrow: "First destination · Casual gaming",
+        title: "Cazzeggio",
         description:
-          "A collection of instant casual games, designed so you can start in seconds and stay for as long as you like.",
+          "The island devoted to time well wasted: casual games, experiments, and no pressure to get anything done.",
         detail:
-          "Quick rounds, playful ideas, and new excuses to procrastinate: the park keeps growing with fresh games and experiments.",
+          "It is the archipelago’s first active route. Future islands will always branch out from the central hub.",
+        action: "Visit Cazzeggio",
       },
     },
-    accent: "#32d7ff",
-    camera: [-58, 38, 48],
-    target: [-16, 5, -6],
-  },
-  {
-    id: "amusement",
-    index: "02",
-    copy: {
-      it: {
-        eyebrow: "Il futuro · Community",
-        title: "Sempre in costruzione",
-        description:
-          "Cazzeggio è in costante aggiornamento: ogni attrazione può diventare un nuovo gioco, evento o piccolo esperimento.",
-        detail:
-          "Il sogno è farne una community attiva di nullafacenti: persone pronte a giocare, condividere record e non concludere nulla insieme.",
-      },
-      en: {
-        eyebrow: "The future · Community",
-        title: "Always under construction",
-        description:
-          "Cazzeggio is constantly evolving: every attraction can become a new game, event, or playful experiment.",
-        detail:
-          "The dream is an active community of professional time-wasters: people ready to play, share scores, and achieve nothing together.",
-      },
-    },
-    accent: "#ff665a",
-    camera: [64, 38, 38],
-    target: [19, 6, -6],
   },
 ];
 
 const UI_COPY = {
   it: {
-    brandMeta: "cazzeggia.online · Casual gaming",
+    brand: "ROBERTO RINGOLI",
+    brandMeta: "Arcipelago digitale · Hub centrale",
+    overviewLabel: "Torna alla vista dell’arcipelago",
     languageSelector: "Seleziona la lingua",
-    overviewLabel: "Torna alla vista completa dell’isola",
-    kicker: "Benvenuto nel mondo di Cazzeggio",
-    headlineStart: "Il posto giusto",
-    headlineEnd: "per perdere tempo.",
+    kicker: "Un portfolio fatto di luoghi",
+    headlineStart: "Il mio",
+    headlineAccent: "arcipelago digitale.",
     intro:
-      "Su cazzeggia.online trovi un’isola di casual gaming per fannulloni, curiosi e professionisti del cazzeggio. È sempre in aggiornamento e sogna una community che non ha fretta di fare nulla.",
+      "Lanciano è il punto centrale: clicca sull’isola per aprire il mio profilo oppure segui il primo percorso verso Cazzeggio.",
+    mapLabel: "Isole collegate",
+    explore: "Destinazioni",
+    hint: "Trascina · zooma · scegli un’isola",
+    loading: "Sto collegando le isole",
     closeCard: "Chiudi la scheda",
-    cardAction: "Esplora l’isola",
-    mapLabel: "Storie di Cazzeggio",
-    explore: "Scopri",
-    hint: "Trascina · zooma · cazzeggia",
-    loading: "Sto caricando l’isola 3D",
-    errorTitle: "L’isola non riesce a partire",
-    errorBody: "Il modello 3D non è riuscito a caricarsi in questo browser.",
+    profileStatus: "Profilo in preparazione",
+    routeActive: "1 percorso attivo",
+    routeName: "Lanciano → Cazzeggio",
+    errorTitle: "L’arcipelago non riesce a partire",
+    errorBody: "I modelli 3D non sono riusciti a caricarsi in questo browser.",
   },
   en: {
-    brandMeta: "cazzeggia.online · Casual gaming",
+    brand: "ROBERTO RINGOLI",
+    brandMeta: "Digital archipelago · Central hub",
+    overviewLabel: "Return to the archipelago view",
     languageSelector: "Choose language",
-    overviewLabel: "Return to the full island view",
-    kicker: "Welcome to the world of Cazzeggio",
-    headlineStart: "The right place",
-    headlineEnd: "to waste your time.",
+    kicker: "A portfolio made of places",
+    headlineStart: "My",
+    headlineAccent: "digital archipelago.",
     intro:
-      "At cazzeggia.online you will find a casual gaming island for slackers, curious minds, and professional procrastinators. It keeps evolving and dreams of a community in no hurry to achieve anything.",
+      "Lanciano is the central hub: click the island to open my profile, or follow the first route towards Cazzeggio.",
+    mapLabel: "Connected islands",
+    explore: "Destinations",
+    hint: "Drag · zoom · choose an island",
+    loading: "Connecting the islands",
     closeCard: "Close panel",
-    cardAction: "Explore the island",
-    mapLabel: "Cazzeggio stories",
-    explore: "Discover",
-    hint: "Drag · zoom · waste time",
-    loading: "Loading the 3D island",
-    errorTitle: "The island could not start",
-    errorBody: "The 3D model could not be loaded in this browser.",
+    profileStatus: "Profile in progress",
+    routeActive: "1 active route",
+    routeName: "Lanciano → Cazzeggio",
+    errorTitle: "The archipelago could not start",
+    errorBody: "The 3D models could not be loaded in this browser.",
   },
 } satisfies Record<Language, Record<string, string>>;
 
 function LanguageFlag({ language }: { language: Language }) {
   if (language === "it") {
     return (
-      <svg
-        className="flag-icon"
-        viewBox="0 0 60 40"
-        aria-hidden="true"
-        focusable="false"
-      >
+      <svg className="flag-icon" viewBox="0 0 60 40" aria-hidden="true">
         <rect width="20" height="40" fill="#009246" />
         <rect x="20" width="20" height="40" fill="#fff" />
         <rect x="40" width="20" height="40" fill="#ce2b37" />
@@ -182,12 +142,7 @@ function LanguageFlag({ language }: { language: Language }) {
   }
 
   return (
-    <svg
-      className="flag-icon"
-      viewBox="0 0 60 40"
-      aria-hidden="true"
-      focusable="false"
-    >
+    <svg className="flag-icon" viewBox="0 0 60 40" aria-hidden="true">
       <rect width="60" height="40" fill="#012169" />
       <path d="M0 0 60 40M60 0 0 40" stroke="#fff" strokeWidth="10" />
       <path d="M0 0 60 40M60 0 0 40" stroke="#c8102e" strokeWidth="5" />
@@ -197,103 +152,26 @@ function LanguageFlag({ language }: { language: Language }) {
   );
 }
 
-const OVERVIEW_CAMERA = new THREE.Vector3(78, 68, 112);
-const OVERVIEW_TARGET = new THREE.Vector3(0, -2, 0);
-
-const palette = {
-  purple: 0x8b24d6,
-  purpleDark: 0x3b1769,
-  sand: 0xf2c982,
-  sandLight: 0xffdfa1,
-  grass: 0x46a36f,
-  grassDark: 0x267154,
-  water: 0x28d8d0,
-  rock: 0x53616c,
-  rockDark: 0x303b49,
-};
-
-function standardMaterial(
-  color: number,
-  options: Partial<THREE.MeshStandardMaterialParameters> = {},
-) {
-  return new THREE.MeshStandardMaterial({
-    color,
-    roughness: 0.78,
-    metalness: 0.02,
-    flatShading: true,
-    ...options,
-  });
-}
-
-function tagAttraction(group: THREE.Object3D, id: AttractionId) {
-  group.userData.attractionRoot = true;
-  group.userData.attractionId = id;
-  group.traverse((child) => {
-    child.userData.attractionId = id;
-  });
-}
-
-function makeRadialShape(radius: number, points: number, seed: number) {
-  const shape = new THREE.Shape();
-  for (let i = 0; i < points; i += 1) {
-    const angle = (i / points) * Math.PI * 2;
-    const variation =
-      Math.sin(angle * 3 + seed) * 0.06 +
-      Math.sin(angle * 7 + seed * 1.7) * 0.035;
-    const r = radius * (1 + variation);
-    const x = Math.cos(angle) * r;
-    const y = Math.sin(angle) * r * 0.78;
-    if (i === 0) shape.moveTo(x, y);
-    else shape.lineTo(x, y);
-  }
-  shape.closePath();
-  return shape;
-}
-
-function makeLandLayer(
-  radius: number,
-  depth: number,
-  color: number,
-  y: number,
-  seed: number,
-) {
-  const geometry = new THREE.ExtrudeGeometry(makeRadialShape(radius, 48, seed), {
-    depth,
-    bevelEnabled: true,
-    bevelSegments: 2,
-    bevelSize: 0.18,
-    bevelThickness: 0.16,
-    curveSegments: 2,
-  });
-  geometry.rotateX(-Math.PI / 2);
-  geometry.computeVertexNormals();
-  const mesh = new THREE.Mesh(geometry, standardMaterial(color));
-  mesh.position.y = y;
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  return mesh;
-}
-
-function createLabel(text: string, accent: string, width = 512) {
+function createIslandLabel(text: string, accent: string) {
   const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = 128;
+  canvas.width = 768;
+  canvas.height = 160;
   const context = canvas.getContext("2d");
   if (!context) return new THREE.Sprite();
 
   context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "rgba(5, 12, 24, .86)";
+  context.fillStyle = "rgba(4, 13, 24, .88)";
   context.beginPath();
-  context.roundRect(8, 16, canvas.width - 16, 94, 28);
+  context.roundRect(12, 24, 744, 112, 34);
   context.fill();
   context.strokeStyle = accent;
   context.lineWidth = 3;
   context.stroke();
-  context.fillStyle = "#ffffff";
-  context.font = "700 38px Arial";
+  context.fillStyle = "#f7fbfc";
+  context.font = "700 42px Manrope, Arial";
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText(text, canvas.width / 2, 64);
+  context.fillText(text, 384, 80);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -303,920 +181,97 @@ function createLabel(text: string, accent: string, width = 512) {
       map: texture,
       transparent: true,
       depthWrite: false,
+      depthTest: false,
     }),
   );
-  sprite.scale.set(width / 100, 1.28, 1);
-  sprite.userData.isAttractionLabel = true;
+  sprite.scale.set(23, 4.8, 1);
+  sprite.renderOrder = 20;
   return sprite;
 }
 
-function createPath(points: THREE.Vector3[], color = 0xe7bd79) {
-  const curve = new THREE.CatmullRomCurve3(points, true, "catmullrom", 0.45);
-  const path = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 80, 0.11, 7, true),
-    standardMaterial(color, { roughness: 0.9 }),
-  );
-  path.receiveShadow = true;
-  return { path, curve };
-}
-
-function createPalm(scale = 1, leafColor = 0x36a86f) {
-  const palm = new THREE.Group();
-  const trunk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.11 * scale, 0.2 * scale, 2.5 * scale, 9),
-    standardMaterial(0x9a6545),
-  );
-  trunk.position.y = 1.25 * scale;
-  trunk.rotation.z = -0.08;
-  trunk.castShadow = true;
-  palm.add(trunk);
-
-  const crown = new THREE.Group();
-  crown.position.set(-0.1 * scale, 2.5 * scale, 0);
-  crown.userData.isPalmCrown = true;
-  const leafMaterial = standardMaterial(leafColor, {
-    side: THREE.DoubleSide,
-    roughness: 0.72,
-  });
-  for (let i = 0; i < 8; i += 1) {
-    const angle = (i / 8) * Math.PI * 2;
-    const leaf = new THREE.Mesh(
-      new THREE.ConeGeometry(0.26 * scale, 1.75 * scale, 5),
-      leafMaterial,
-    );
-    leaf.scale.x = 0.42;
-    leaf.position.set(
-      Math.cos(angle) * 0.66 * scale,
-      0,
-      Math.sin(angle) * 0.66 * scale,
-    );
-    leaf.rotation.z = Math.PI / 2.35;
-    leaf.rotation.y = -angle;
-    leaf.castShadow = true;
-    crown.add(leaf);
-  }
-  palm.add(crown);
-
-  const coconuts = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(0.17 * scale, 0),
-    standardMaterial(0x6f4632),
-  );
-  coconuts.position.set(0.12 * scale, 2.36 * scale, 0.08 * scale);
-  palm.add(coconuts);
-  return palm;
-}
-
-function createRock(scale = 1, color = palette.rock) {
-  const rock = new THREE.Mesh(
-    new THREE.DodecahedronGeometry(scale, 0),
-    standardMaterial(color),
-  );
-  rock.scale.set(1, 0.72, 0.88);
-  rock.rotation.set(
-    Math.random() * 0.3,
-    Math.random() * Math.PI,
-    Math.random() * 0.25,
-  );
-  rock.castShadow = true;
-  rock.receiveShadow = true;
-  return rock;
-}
-
-function createUmbrella(color: number) {
-  const umbrella = new THREE.Group();
-  const pole = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.035, 0.045, 1.45, 8),
-    standardMaterial(0xf3eadc),
-  );
-  pole.position.y = 0.73;
-  umbrella.add(pole);
-  const canopy = new THREE.Mesh(
-    new THREE.ConeGeometry(0.85, 0.38, 12),
-    standardMaterial(color, { side: THREE.DoubleSide }),
-  );
-  canopy.position.y = 1.45;
-  canopy.castShadow = true;
-  umbrella.add(canopy);
-  return umbrella;
-}
-
-function createLounger(color: number) {
-  const group = new THREE.Group();
-  const fabric = new THREE.Mesh(
-    new THREE.BoxGeometry(0.58, 0.08, 1.35),
-    standardMaterial(color),
-  );
-  fabric.position.y = 0.22;
-  fabric.rotation.x = -0.12;
-  fabric.castShadow = true;
-  group.add(fabric);
-  for (const z of [-0.5, 0.5]) {
-    const leg = new THREE.Mesh(
-      new THREE.BoxGeometry(0.48, 0.28, 0.06),
-      standardMaterial(0xe7dfd3),
-    );
-    leg.position.set(0, 0.08, z);
-    group.add(leg);
-  }
-  return group;
-}
-
-function createWaterMaterial() {
-  return new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-    uniforms: {
-      uTime: { value: 0 },
-      uColorA: { value: new THREE.Color(0x1bc8c5) },
-      uColorB: { value: new THREE.Color(0x76f6e6) },
-    },
-    vertexShader: `
-      uniform float uTime;
-      varying vec2 vUv;
-      varying float vWave;
-      void main() {
-        vUv = uv;
-        vec3 p = position;
-        float wave = sin((p.x + uTime * 0.7) * 1.35) * 0.07
-          + cos((p.y - uTime * 0.55) * 1.8) * 0.045;
-        p.z += wave;
-        vWave = wave;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float uTime;
-      uniform vec3 uColorA;
-      uniform vec3 uColorB;
-      varying vec2 vUv;
-      varying float vWave;
-      void main() {
-        float lines = sin((vUv.x + vUv.y) * 34.0 + uTime * 1.5) * 0.5 + 0.5;
-        float shimmer = smoothstep(0.72, 1.0, lines) * 0.16;
-        vec3 color = mix(uColorA, uColorB, 0.42 + vWave * 2.4 + shimmer);
-        gl_FragColor = vec4(color, 0.78);
-      }
-    `,
-  });
-}
-
-function createWaterfall(
-  width: number,
-  height: number,
-  position: THREE.Vector3,
-  rotationY: number,
-) {
-  const group = new THREE.Group();
-  group.position.copy(position);
-  group.rotation.y = rotationY;
-
-  const geometry = new THREE.PlaneGeometry(width, height, 14, 28);
-  const positionAttribute = geometry.getAttribute("position");
-  for (let i = 0; i < positionAttribute.count; i += 1) {
-    const x = positionAttribute.getX(i);
-    const y = positionAttribute.getY(i);
-    const normalized = y / height + 0.5;
-    positionAttribute.setZ(
-      i,
-      Math.sin(x * 2.8) * 0.05 + Math.pow(1 - normalized, 2) * 0.72,
-    );
-  }
-  geometry.computeVertexNormals();
-
-  const material = new THREE.ShaderMaterial({
-    transparent: true,
-    depthWrite: false,
-    side: THREE.DoubleSide,
-    uniforms: {
-      uTime: { value: 0 },
-      uColor: { value: new THREE.Color(0x61f5ee) },
-    },
-    vertexShader: `
-      varying vec2 vUv;
-      void main() {
-        vUv = uv;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }
-    `,
-    fragmentShader: `
-      uniform float uTime;
-      uniform vec3 uColor;
-      varying vec2 vUv;
-      void main() {
-        float flow = sin(vUv.x * 27.0 + (vUv.y - uTime * 0.8) * 18.0);
-        float ribbons = smoothstep(0.05, 0.95, flow * 0.5 + 0.5);
-        float edge = smoothstep(0.0, 0.15, vUv.x) * smoothstep(1.0, 0.85, vUv.x);
-        float foam = smoothstep(0.78, 1.0, vUv.y) + smoothstep(0.15, 0.0, vUv.y);
-        float alpha = (0.38 + ribbons * 0.32 + foam * 0.22) * edge;
-        gl_FragColor = vec4(mix(uColor, vec3(0.92, 1.0, 1.0), foam * 0.6), alpha);
-      }
-    `,
-  });
-  const fall = new THREE.Mesh(geometry, material);
-  fall.position.y = -height / 2 + 0.45;
-  group.add(fall);
-
-  const particleCount = 85;
-  const particlePositions = new Float32Array(particleCount * 3);
-  for (let i = 0; i < particleCount; i += 1) {
-    particlePositions[i * 3] = (Math.random() - 0.5) * width * 1.08;
-    particlePositions[i * 3 + 1] = -Math.random() * height + 0.55;
-    particlePositions[i * 3 + 2] = (Math.random() - 0.5) * 0.65;
-  }
-  const particleGeometry = new THREE.BufferGeometry();
-  particleGeometry.setAttribute(
-    "position",
-    new THREE.BufferAttribute(particlePositions, 3),
-  );
-  const points = new THREE.Points(
-    particleGeometry,
-    new THREE.PointsMaterial({
-      color: 0xb9ffff,
-      size: 0.09,
-      transparent: true,
-      opacity: 0.82,
-      depthWrite: false,
-    }),
-  );
-  group.add(points);
-
-  return {
-    group,
-    material,
-    particles: {
-      points,
-      positions: particlePositions,
-      top: 0.55,
-      bottom: -height,
-    } satisfies WaterfallParticles,
-  };
-}
-
-function createHub() {
-  const group = new THREE.Group();
-  group.position.set(0, 1.4, -0.3);
-
-  const base = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.05, 2.25, 0.38, 16),
-    standardMaterial(0xe8dcf3),
-  );
-  base.position.y = 0.18;
-  base.castShadow = true;
-  group.add(base);
-
-  const building = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.6, 1.8, 1.7, 12),
-    standardMaterial(palette.purple),
-  );
-  building.position.y = 1.18;
-  building.castShadow = true;
-  group.add(building);
-
-  const glass = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.34, 1.5, 1.28, 12),
-    standardMaterial(0x151c38, {
-      emissive: 0x30105d,
-      emissiveIntensity: 0.8,
-      roughness: 0.2,
-      metalness: 0.15,
-    }),
-  );
-  glass.position.y = 1.24;
-  group.add(glass);
-
-  const roof = new THREE.Mesh(
-    new THREE.ConeGeometry(2.15, 0.9, 12),
-    standardMaterial(0xf6f1fb),
-  );
-  roof.position.y = 2.45;
-  roof.castShadow = true;
-  group.add(roof);
-
-  const antenna = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.05, 0.08, 1.4, 8),
-    standardMaterial(0xe9def3),
-  );
-  antenna.position.y = 3.45;
-  group.add(antenna);
-
-  const signal = new THREE.Mesh(
-    new THREE.TorusGeometry(0.42, 0.035, 8, 32, Math.PI),
-    new THREE.MeshBasicMaterial({ color: 0xcf8bff }),
-  );
-  signal.position.y = 3.82;
-  signal.rotation.z = Math.PI / 2;
-  signal.userData.isSignal = true;
-  group.add(signal);
-
-  const sign = createLabel("CAZZEGGIO", "#a855f7", 620);
-  sign.position.set(0, 3.45, 0.2);
-  sign.scale.multiplyScalar(0.78);
-  group.add(sign);
-
-  const portal = new THREE.Mesh(
-    new THREE.TorusGeometry(0.62, 0.12, 10, 36, Math.PI),
-    standardMaterial(0xffffff, {
-      emissive: 0x9333ea,
-      emissiveIntensity: 1.5,
-    }),
-  );
-  portal.position.set(0, 0.95, 1.55);
-  group.add(portal);
-
-  tagAttraction(group, "hub");
-  return group;
-}
-
-function createBlastTower() {
-  const group = new THREE.Group();
-  group.position.set(-4.65, 1.35, -2.55);
-  const colors = [0x30d5ff, 0x5a63f2, 0xa855f7, 0xff565f, 0xffcf3b, 0x2edd79];
-  const layout = [
-    [-1, 0, 0],
-    [0, 0, 0],
-    [1, 0, 0],
-    [-1, 1, 0],
-    [0, 1, 0],
-    [0, 2, 0],
-    [1, 2, 0],
-    [1, 3, 0],
-    [0, 0, 1],
-    [0, 1, 1],
-  ];
-  layout.forEach(([x, y, z], index) => {
-    const block = new THREE.Mesh(
-      new THREE.BoxGeometry(0.72, 0.72, 0.72),
-      standardMaterial(colors[index % colors.length], {
-        emissive: colors[index % colors.length],
-        emissiveIntensity: 0.1,
-        roughness: 0.35,
-      }),
-    );
-    block.position.set(x * 0.76, y * 0.76 + 0.4, z * 0.76);
-    block.castShadow = true;
-    group.add(block);
-  });
-
-  const crown = new THREE.Mesh(
-    new THREE.ConeGeometry(0.58, 0.8, 5),
-    standardMaterial(0xffd33d, {
-      emissive: 0xb77300,
-      emissiveIntensity: 0.35,
-    }),
-  );
-  crown.position.set(0.75, 3.65, 0);
-  crown.rotation.z = 0.08;
-  group.add(crown);
-
-  const platform = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.75, 1.95, 0.28, 12),
-    standardMaterial(0x153463),
-  );
-  platform.position.y = 0.05;
-  group.add(platform);
-
-  const label = createLabel("BLAST", "#32d7ff", 360);
-  label.position.set(0, 3.6, 0.4);
-  label.scale.multiplyScalar(0.62);
-  group.add(label);
-
-  tagAttraction(group, "blast");
-  return group;
-}
-
-function createKebabBooth() {
-  const group = new THREE.Group();
-  group.position.set(4.55, 1.32, -2.35);
-
-  const booth = new THREE.Mesh(
-    new THREE.BoxGeometry(2.6, 1.15, 1.55),
-    standardMaterial(0xa44f2d),
-  );
-  booth.position.y = 0.58;
-  booth.castShadow = true;
-  group.add(booth);
-
-  const awning = new THREE.Mesh(
-    new THREE.BoxGeometry(2.9, 0.18, 1.85),
-    standardMaterial(0xff8a3d),
-  );
-  awning.position.y = 1.35;
-  group.add(awning);
-
-  const kebab = new THREE.Group();
-  const skewer = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.035, 0.035, 3.4, 8),
-    standardMaterial(0xd9d9d9, { metalness: 0.6, roughness: 0.28 }),
-  );
-  skewer.position.y = 1.7;
-  kebab.add(skewer);
-  for (let i = 0; i < 7; i += 1) {
-    const layer = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        0.55 - i * 0.035,
-        0.5 - i * 0.025,
-        0.34,
-        9,
-      ),
-      standardMaterial(i % 2 ? 0xcc5d2c : 0xe48339),
-    );
-    layer.position.y = 0.62 + i * 0.32;
-    layer.rotation.y = i * 0.36;
-    layer.castShadow = true;
-    kebab.add(layer);
-  }
-  kebab.position.set(0.35, 1.25, 0);
-  kebab.userData.isKebab = true;
-  group.add(kebab);
-
-  const hammer = new THREE.Group();
-  const handle = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.07, 0.09, 1.3, 8),
-    standardMaterial(0x7a4c32),
-  );
-  handle.position.y = 0.65;
-  hammer.add(handle);
-  const head = new THREE.Mesh(
-    new THREE.BoxGeometry(0.78, 0.42, 0.48),
-    standardMaterial(0x30333c, { metalness: 0.35 }),
-  );
-  head.position.y = 1.35;
-  hammer.add(head);
-  hammer.position.set(-0.95, 1.2, 0.45);
-  hammer.rotation.z = -0.55;
-  hammer.userData.isHammer = true;
-  group.add(hammer);
-
-  const label = createLabel("KEBAB SMASH", "#ff8a3d", 520);
-  label.position.set(0, 3.8, 0);
-  label.scale.multiplyScalar(0.62);
-  group.add(label);
-
-  tagAttraction(group, "kebab");
-  return group;
-}
-
-function createTinyCar(color: number) {
-  const car = new THREE.Group();
-  const body = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28, 0.13, 0.66),
-    standardMaterial(color, { roughness: 0.35 }),
-  );
-  body.position.y = 0.13;
-  car.add(body);
-  const nose = new THREE.Mesh(
-    new THREE.BoxGeometry(0.13, 0.08, 0.38),
-    standardMaterial(color, { roughness: 0.35 }),
-  );
-  nose.position.set(0, 0.1, 0.48);
-  car.add(nose);
-  const wing = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5, 0.05, 0.1),
-    standardMaterial(0x161921),
-  );
-  wing.position.set(0, 0.12, 0.7);
-  car.add(wing);
-  for (const x of [-0.2, 0.2]) {
-    for (const z of [-0.22, 0.28]) {
-      const wheel = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.1, 0.1, 0.08, 8),
-        standardMaterial(0x111318),
-      );
-      wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(x, 0.1, z);
-      car.add(wheel);
-    }
-  }
-  return car;
-}
-
-function createGpAttraction() {
-  const group = new THREE.Group();
-  group.position.set(-3.35, 1.28, 3.85);
-  const trackPoints = [
-    new THREE.Vector3(-2.1, 0.25, -0.6),
-    new THREE.Vector3(-1.3, 0.25, -1.45),
-    new THREE.Vector3(0.5, 0.25, -1.4),
-    new THREE.Vector3(2.05, 0.25, -0.55),
-    new THREE.Vector3(1.65, 0.25, 1.0),
-    new THREE.Vector3(0.25, 0.25, 1.45),
-    new THREE.Vector3(-1.65, 0.25, 1.05),
-  ];
+function createRoute() {
   const curve = new THREE.CatmullRomCurve3(
-    trackPoints,
-    true,
-    "catmullrom",
-    0.45,
-  );
-  const roadMaterial = standardMaterial(0x262b34, { roughness: 0.95 });
-  for (let i = 0; i < 58; i += 1) {
-    const t = i / 58;
-    const point = curve.getPointAt(t);
-    const tangent = curve.getTangentAt(t);
-    const road = new THREE.Mesh(
-      new THREE.BoxGeometry(0.72, 0.1, 0.42),
-      roadMaterial,
-    );
-    road.position.copy(point);
-    road.rotation.y = Math.atan2(tangent.x, tangent.z);
-    road.receiveShadow = true;
-    group.add(road);
-    if (i % 3 === 0) {
-      const curb = new THREE.Mesh(
-        new THREE.BoxGeometry(0.1, 0.04, 0.4),
-        standardMaterial(i % 2 ? 0xffffff : 0xff4f5e),
-      );
-      const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-      curb.position.copy(point).addScaledVector(normal, 0.42);
-      curb.position.y += 0.07;
-      curb.rotation.y = road.rotation.y;
-      group.add(curb);
-    }
-  }
-
-  const cars = [createTinyCar(0xff4f5e), createTinyCar(0x4dd8ff)];
-  cars.forEach((car, index) => {
-    car.userData.gpOffset = index * 0.5;
-    group.add(car);
-  });
-  group.userData.gpCurve = curve;
-  group.userData.gpCars = cars;
-
-  const gantry = new THREE.Mesh(
-    new THREE.BoxGeometry(1.5, 0.22, 0.18),
-    standardMaterial(0xffffff),
-  );
-  gantry.position.set(-0.65, 1.3, -1.15);
-  group.add(gantry);
-  for (const x of [-1.3, 0]) {
-    const support = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, 1.25, 0.12),
-      standardMaterial(0xffffff),
-    );
-    support.position.set(x, 0.7, -1.15);
-    group.add(support);
-  }
-
-  const label = createLabel("CAZZEGGIO GP", "#ff4f5e", 520);
-  label.position.set(0, 2.45, 0);
-  label.scale.multiplyScalar(0.58);
-  group.add(label);
-  tagAttraction(group, "gp");
-  return group;
-}
-
-function createBeachClub() {
-  const group = new THREE.Group();
-  group.position.set(4.75, 1.08, 3.45);
-
-  const tikiBar = new THREE.Mesh(
-    new THREE.BoxGeometry(2.2, 1.0, 1.15),
-    standardMaterial(0xb76c3f),
-  );
-  tikiBar.position.y = 0.5;
-  tikiBar.castShadow = true;
-  group.add(tikiBar);
-  const roof = new THREE.Mesh(
-    new THREE.ConeGeometry(1.65, 0.65, 4),
-    standardMaterial(0x6e4a35),
-  );
-  roof.rotation.y = Math.PI / 4;
-  roof.position.y = 1.45;
-  group.add(roof);
-
-  const neon = createLabel("AFK CLUB", "#35e0c1", 420);
-  neon.position.set(0, 2.55, 0.2);
-  neon.scale.multiplyScalar(0.54);
-  group.add(neon);
-
-  const umbrellaA = createUmbrella(0x35e0c1);
-  umbrellaA.position.set(-1.9, 0, 1);
-  group.add(umbrellaA);
-  const umbrellaB = createUmbrella(0xff5b79);
-  umbrellaB.position.set(1.8, 0, 1.2);
-  group.add(umbrellaB);
-
-  const loungerA = createLounger(0xf8f3eb);
-  loungerA.position.set(-1.8, 0, 2.1);
-  loungerA.rotation.y = -0.25;
-  group.add(loungerA);
-  const loungerB = createLounger(0xf8f3eb);
-  loungerB.position.set(1.6, 0, 2.2);
-  loungerB.rotation.y = 0.2;
-  group.add(loungerB);
-
-  const ball = new THREE.Mesh(
-    new THREE.SphereGeometry(0.22, 12, 8),
-    standardMaterial(0xfff2d6),
-  );
-  ball.position.set(0.8, 0.23, 2.65);
-  group.add(ball);
-
-  tagAttraction(group, "beach");
-  return group;
-}
-
-function createPerson(index: number) {
-  const root = new THREE.Group();
-  const skinColors = [0xf0b38f, 0xc98663, 0x8f5b44, 0xf4c5a5];
-  const shirtColors = [0x8b24d6, 0x28c7c1, 0xff6b58, 0xf1ca45, 0x4389ff];
-  const skin = standardMaterial(skinColors[index % skinColors.length]);
-  const shirt = standardMaterial(shirtColors[index % shirtColors.length]);
-  const dark = standardMaterial(index % 2 ? 0x20263b : 0x45315a);
-
-  const body = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.28, 0.55, 5, 8),
-    shirt,
-  );
-  body.position.y = 1.05;
-  body.castShadow = true;
-  root.add(body);
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 12, 8), skin);
-  head.position.y = 1.72;
-  head.castShadow = true;
-  root.add(head);
-
-  const hair = new THREE.Mesh(
-    new THREE.SphereGeometry(0.26, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.52),
-    standardMaterial(index % 3 === 0 ? 0x2a1b18 : 0x4a3024),
-  );
-  hair.position.y = 1.76;
-  root.add(hair);
-
-  const leftLeg = new THREE.Group();
-  const rightLeg = new THREE.Group();
-  for (const [leg, x] of [
-    [leftLeg, -0.13],
-    [rightLeg, 0.13],
-  ] as const) {
-    const limb = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.075, 0.5, 4, 7),
-      dark,
-    );
-    limb.position.y = -0.3;
-    leg.position.set(x, 0.62, 0);
-    leg.add(limb);
-    root.add(leg);
-  }
-
-  const leftArm = new THREE.Group();
-  const rightArm = new THREE.Group();
-  for (const [arm, x] of [
-    [leftArm, -0.35],
-    [rightArm, 0.35],
-  ] as const) {
-    const limb = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.06, 0.42, 4, 7),
-      skin,
-    );
-    limb.position.y = -0.24;
-    arm.position.set(x, 1.35, 0);
-    arm.rotation.x = -0.82;
-    arm.rotation.z = x > 0 ? 0.25 : -0.25;
-    arm.add(limb);
-    root.add(arm);
-  }
-
-  const phone = new THREE.Mesh(
-    new THREE.BoxGeometry(0.28, 0.46, 0.045),
-    standardMaterial(0x151821, {
-      emissive: 0x276aff,
-      emissiveIntensity: 0.45,
-      roughness: 0.25,
-    }),
-  );
-  phone.position.set(0, 1.18, 0.43);
-  phone.rotation.x = -0.55;
-  root.add(phone);
-
-  root.scale.setScalar(0.72 + (index % 3) * 0.04);
-  return { root, leftLeg, rightLeg, leftArm, rightArm };
-}
-
-function createCazzeggioIsland() {
-  const island = new THREE.Group();
-
-  const cliff = new THREE.Mesh(
-    new THREE.CylinderGeometry(10.8, 5.6, 5.2, 28, 4),
-    standardMaterial(palette.rock),
-  );
-  cliff.scale.z = 0.78;
-  cliff.position.y = -1.9;
-  cliff.castShadow = true;
-  cliff.receiveShadow = true;
-  island.add(cliff);
-
-  const lowerCliff = new THREE.Mesh(
-    new THREE.CylinderGeometry(5.7, 2.0, 3.1, 18, 2),
-    standardMaterial(palette.rockDark),
-  );
-  lowerCliff.scale.z = 0.8;
-  lowerCliff.position.y = -5.6;
-  lowerCliff.castShadow = true;
-  island.add(lowerCliff);
-
-  const waterMaterial = createWaterMaterial();
-  const upperSea = new THREE.Mesh(
-    new THREE.CircleGeometry(10.85, 72),
-    waterMaterial,
-  );
-  upperSea.scale.y = 0.78;
-  upperSea.rotation.x = -Math.PI / 2;
-  upperSea.position.y = 0.78;
-  upperSea.receiveShadow = true;
-  island.add(upperSea);
-
-  const sand = makeLandLayer(9.1, 0.48, palette.sand, 0.82, 2.3);
-  sand.position.x = -0.2;
-  island.add(sand);
-  const grass = makeLandLayer(7.15, 0.68, palette.grass, 1.28, 4.8);
-  grass.position.set(-0.65, 0.03, -0.45);
-  island.add(grass);
-
-  const innerSand = new THREE.Mesh(
-    new THREE.RingGeometry(7.15, 8.5, 64),
-    standardMaterial(palette.sandLight),
-  );
-  innerSand.scale.y = 0.78;
-  innerSand.rotation.x = -Math.PI / 2;
-  innerSand.position.set(-0.2, 1.05, 0);
-  island.add(innerSand);
-
-  const pathResult = createPath(
     [
-      new THREE.Vector3(-5.8, 1.72, -0.5),
-      new THREE.Vector3(-3.8, 1.72, -4.2),
-      new THREE.Vector3(0, 1.72, -4.5),
-      new THREE.Vector3(4.2, 1.72, -3.7),
-      new THREE.Vector3(6.2, 1.72, 0),
-      new THREE.Vector3(4.3, 1.72, 3.7),
-      new THREE.Vector3(0.2, 1.72, 5.0),
-      new THREE.Vector3(-4.4, 1.72, 3.7),
+      new THREE.Vector3(13, 0.8, 3),
+      new THREE.Vector3(30, -0.5, 12),
+      new THREE.Vector3(49, -1.6, 15),
+      new THREE.Vector3(66, 0.3, 9),
     ],
-    0xedd29b,
+    false,
+    "catmullrom",
+    0.38,
   );
-  island.add(pathResult.path);
 
-  const hub = createHub();
-  const blast = createBlastTower();
-  const kebab = createKebabBooth();
-  const gp = createGpAttraction();
-  const beach = createBeachClub();
-  island.add(hub, blast, kebab, gp, beach);
-
-  const palmData = [
-    [-7.1, -3.8, 1.15, 0.2],
-    [-7.8, 1.5, 1.0, -0.35],
-    [-5.7, 4.6, 0.9, 0.4],
-    [0.5, -5.6, 1.1, -0.1],
-    [8.25, -1.25, 1.0, 0.3],
-    [7.6, 1.0, 1.2, -0.4],
-    [6.4, 5.2, 0.88, 0.2],
-    [1.0, 5.8, 0.82, -0.2],
-  ] as const;
-  palmData.forEach(([x, z, scale, rotation]) => {
-    const palm = createPalm(scale);
-    palm.position.set(x, 1.34, z);
-    palm.rotation.y = rotation;
-    island.add(palm);
+  const routeMaterial = new THREE.MeshStandardMaterial({
+    color: 0xe7bf71,
+    emissive: 0x7f5420,
+    emissiveIntensity: 0.72,
+    roughness: 0.46,
+    metalness: 0.08,
   });
+  const route = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, 120, 0.42, 10, false),
+    routeMaterial,
+  );
+  route.castShadow = true;
 
-  const rockData = [
-    [-9.5, -2.2, 0.85],
-    [-8.9, 3.4, 0.65],
-    [8.9, -2.7, 0.72],
-    [9.4, 2.6, 0.9],
-    [1.5, -6.3, 0.58],
-    [-2.4, 6.1, 0.62],
-  ] as const;
-  rockData.forEach(([x, z, scale]) => {
-    const rock = createRock(scale);
-    rock.position.set(x, 0.98, z);
-    island.add(rock);
-  });
-
-  const waterfalls = [
-    createWaterfall(2.5, 6.4, new THREE.Vector3(9.3, 0.8, -2.6), Math.PI / 2),
-    createWaterfall(2.0, 6.0, new THREE.Vector3(-8.8, 0.8, 3.5), -Math.PI / 2),
-    createWaterfall(2.8, 6.8, new THREE.Vector3(1.0, 0.8, 7.9), 0),
-  ];
-  waterfalls.forEach(({ group }) => island.add(group));
-
-  const foamMaterial = standardMaterial(0xd9ffff, {
+  const pulseMaterial = new THREE.MeshBasicMaterial({
+    color: 0xffe5aa,
     transparent: true,
-    opacity: 0.7,
-    roughness: 0.2,
+    opacity: 0.95,
   });
-  for (const [x, z] of [
-    [9.45, -2.6],
-    [-8.95, 3.5],
-    [1.0, 7.95],
-  ] as const) {
-    for (let i = 0; i < 8; i += 1) {
-      const foam = new THREE.Mesh(
-        new THREE.IcosahedronGeometry(0.18 + Math.random() * 0.2, 1),
-        foamMaterial,
-      );
-      foam.position.set(
-        x + (Math.random() - 0.5) * 1.6,
-        0.72 + Math.random() * 0.25,
-        z + (Math.random() - 0.5) * 1.2,
-      );
-      foam.userData.isFoam = true;
-      foam.userData.foamOffset = Math.random() * Math.PI * 2;
-      island.add(foam);
+  const pulses = Array.from({ length: 5 }, (_, index) => {
+    const pulse = new THREE.Mesh(
+      new THREE.SphereGeometry(0.8, 14, 10),
+      pulseMaterial.clone(),
+    );
+    pulse.userData.routeOffset = index / 5;
+    return pulse;
+  });
+
+  return { curve, route, pulses };
+}
+
+function prepareIsland(
+  source: THREE.Object3D,
+  id: WorldNodeId,
+  position: THREE.Vector3,
+  scale: number,
+  interactiveMeshes: THREE.Object3D[],
+) {
+  source.position.copy(position);
+  source.scale.setScalar(scale);
+  source.userData.worldNodeId = id;
+  source.traverse((object) => {
+    object.userData.worldNodeId = id;
+    if (object instanceof THREE.Mesh) {
+      object.castShadow = true;
+      object.receiveShadow = true;
+      interactiveMeshes.push(object);
     }
-  }
-
-  const walkPaths = [
-    new THREE.CatmullRomCurve3(
-      [
-        new THREE.Vector3(-5.7, 1.82, 0.2),
-        new THREE.Vector3(-3.6, 1.82, -3.6),
-        new THREE.Vector3(0, 1.82, -4.2),
-        new THREE.Vector3(4.5, 1.82, -3.2),
-        new THREE.Vector3(5.9, 1.82, 0.4),
-        new THREE.Vector3(3.8, 1.82, 3.4),
-        new THREE.Vector3(0, 1.82, 4.6),
-        new THREE.Vector3(-4.4, 1.82, 3.4),
-      ],
-      true,
-      "catmullrom",
-      0.45,
-    ),
-    new THREE.CatmullRomCurve3(
-      [
-        new THREE.Vector3(-2.7, 1.82, -0.2),
-        new THREE.Vector3(-1.5, 1.82, -2.2),
-        new THREE.Vector3(1.5, 1.82, -2.0),
-        new THREE.Vector3(2.7, 1.82, 0),
-        new THREE.Vector3(1.5, 1.82, 2.2),
-        new THREE.Vector3(-1.8, 1.82, 2.1),
-      ],
-      true,
-      "catmullrom",
-      0.42,
-    ),
-    new THREE.CatmullRomCurve3(
-      [
-        new THREE.Vector3(2.6, 1.45, 4.9),
-        new THREE.Vector3(4.0, 1.45, 5.8),
-        new THREE.Vector3(6.6, 1.45, 4.8),
-        new THREE.Vector3(7.0, 1.45, 2.7),
-        new THREE.Vector3(5.5, 1.45, 1.8),
-        new THREE.Vector3(3.3, 1.45, 2.4),
-      ],
-      true,
-      "catmullrom",
-      0.4,
-    ),
-  ];
-
-  const walkers: Walker[] = [];
-  for (let i = 0; i < 12; i += 1) {
-    const person = createPerson(i);
-    const walker: Walker = {
-      ...person,
-      path: walkPaths[i % walkPaths.length],
-      offset: (i * 0.173) % 1,
-      speed: 0.018 + (i % 4) * 0.0025,
-    };
-    walkers.push(walker);
-    island.add(person.root);
-  }
-
-  return {
-    island,
-    waterMaterial,
-    waterfalls,
-    walkers,
-    attractions: [hub, blast, kebab, gp, beach],
-    gp,
-  };
+  });
+  return source;
 }
 
 export default function PortfolioWorld() {
   const mountRef = useRef<HTMLDivElement>(null);
-  const selectRef = useRef<(id: AttractionId | null) => void>(() => {});
-  const [selectedId, setSelectedId] = useState<AttractionId | null>(null);
-  const [language, setLanguage] = useState<Language>(() => {
-    if (typeof window === "undefined") return "it";
-    const saved = window.localStorage.getItem("cazzeggio-language");
-    if (saved === "it" || saved === "en") return saved;
-    return window.navigator.language.toLowerCase().startsWith("it")
-      ? "it"
-      : "en";
-  });
+  const selectRef = useRef<(id: WorldNodeId | null) => void>(() => {});
+  const [selectedId, setSelectedId] = useState<WorldNodeId | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [webglError, setWebglError] = useState(false);
-  const selected =
-    ATTRACTIONS.find((attraction) => attraction.id === selectedId) ?? null;
-  const selectedContent = selected?.copy[language] ?? null;
-  const copy = UI_COPY[language];
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") return "it";
+    const saved = window.localStorage.getItem("portfolio-language");
+    if (saved === "it" || saved === "en") return saved;
+    return window.navigator.language.toLowerCase().startsWith("it") ? "it" : "en";
+  });
 
-  const selectAttraction = useCallback((id: AttractionId | null) => {
+  const copy = UI_COPY[language];
+  const selected =
+    WORLD_NODES.find((node) => node.id === selectedId) ?? null;
+  const selectedContent = selected?.copy[language] ?? null;
+
+  const selectNode = useCallback((id: WorldNodeId | null) => {
     selectRef.current(id);
     setSelectedId(id);
   }, []);
@@ -1225,9 +280,9 @@ export default function PortfolioWorld() {
     document.documentElement.lang = language;
     document.title =
       language === "it"
-        ? "Cazzeggio — Il posto giusto per perdere tempo | cazzeggia.online"
-        : "Cazzeggio — The right place to waste your time | cazzeggia.online";
-    window.localStorage.setItem("cazzeggio-language", language);
+        ? "Roberto Ringoli — Arcipelago digitale"
+        : "Roberto Ringoli — Digital archipelago";
+    window.localStorage.setItem("portfolio-language", language);
   }, [language]);
 
   useEffect(() => {
@@ -1248,146 +303,91 @@ export default function PortfolioWorld() {
     }
 
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x071321, 0.0032);
+    scene.fog = new THREE.FogExp2(0x06111d, 0.0024);
 
     const camera = new THREE.PerspectiveCamera(
       42,
       mount.clientWidth / mount.clientHeight,
       0.1,
-      420,
+      600,
     );
     camera.position.copy(OVERVIEW_CAMERA);
 
     renderer.setSize(mount.clientWidth, mount.clientHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.65));
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.08;
+    renderer.toneMappingExposure = 1.02;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFShadowMap;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     mount.appendChild(renderer.domElement);
 
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = 0.065;
     controls.enablePan = false;
-    controls.minDistance = 34;
-    controls.maxDistance = 165;
-    controls.minPolarAngle = Math.PI * 0.18;
-    controls.maxPolarAngle = Math.PI * 0.49;
+    controls.minDistance = 48;
+    controls.maxDistance = 280;
+    controls.minPolarAngle = Math.PI * 0.16;
+    controls.maxPolarAngle = Math.PI * 0.52;
     controls.target.copy(OVERVIEW_TARGET);
 
-    scene.add(new THREE.HemisphereLight(0xbde7ff, 0x172033, 2.9));
-    const sun = new THREE.DirectionalLight(0xffdfb5, 4.6);
-    sun.position.set(-58, 92, 54);
+    scene.add(new THREE.HemisphereLight(0xc7edff, 0x152135, 2.8));
+    const sun = new THREE.DirectionalLight(0xffddb0, 4.2);
+    sun.position.set(-70, 130, 80);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
     sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 230;
-    sun.shadow.camera.left = -62;
-    sun.shadow.camera.right = 62;
-    sun.shadow.camera.top = 62;
-    sun.shadow.camera.bottom = -62;
+    sun.shadow.camera.far = 360;
+    sun.shadow.camera.left = -145;
+    sun.shadow.camera.right = 145;
+    sun.shadow.camera.top = 120;
+    sun.shadow.camera.bottom = -120;
     scene.add(sun);
 
-    const rim = new THREE.DirectionalLight(0x58e7db, 1.65);
-    rim.position.set(62, 35, -58);
+    const rim = new THREE.DirectionalLight(0x57ead8, 1.35);
+    rim.position.set(135, 65, -120);
     scene.add(rim);
 
-    const interactiveMeshes: THREE.Object3D[] = [];
-    let island: THREE.Group | null = null;
-    let mixer: THREE.AnimationMixer | null = null;
-    let disposed = false;
-
-    const attractionIdFromObject = (
-      source: THREE.Object3D,
-    ): AttractionId | null => {
-      let object: THREE.Object3D | null = source;
-      while (object) {
-        const name = object.name.toLowerCase();
-        if (name.includes("02_beach") || name.includes("zone_beach")) {
-          return "beach";
-        }
-        if (
-          name.includes("04_waterpark") ||
-          name.includes("zone_waterpark")
-        ) {
-          return "waterpark";
-        }
-        if (
-          name.includes("05_amusement_park") ||
-          name.includes("zone_amusementpark")
-        ) {
-          return "amusement";
-        }
-        object = object.parent;
-      }
-      return null;
-    };
-
-    const loader = new GLTFLoader();
-    loader.load(
-      "/models/maldives-leisure-island.glb",
-      (gltf) => {
-        if (disposed) return;
-
-        island = gltf.scene;
-        island.name = "Maldives_Leisure_Island";
-        island.traverse((object) => {
-          const id = attractionIdFromObject(object);
-          if (id) object.userData.attractionId = id;
-
-          if (object instanceof THREE.Mesh) {
-            const materials = Array.isArray(object.material)
-              ? object.material
-              : [object.material];
-            object.castShadow = materials.every(
-              (material) => !material.transparent,
-            );
-            object.receiveShadow = true;
-            if (id) interactiveMeshes.push(object);
-          }
-        });
-        scene.add(island);
-
-        mixer = new THREE.AnimationMixer(island);
-        gltf.animations.forEach((clip) => {
-          const action = mixer?.clipAction(clip);
-          action?.setLoop(THREE.LoopRepeat, Infinity);
-          action?.play();
-        });
-
-        setLoaded(true);
-      },
-      undefined,
-      () => {
-        if (disposed) return;
-        setWebglError(true);
-        setLoaded(true);
-      },
-    );
-
-    const lowerMist = new THREE.Mesh(
-      new THREE.CircleGeometry(66, 96),
-      new THREE.MeshBasicMaterial({
-        color: 0x17334b,
+    const ocean = new THREE.Mesh(
+      new THREE.CircleGeometry(310, 160),
+      new THREE.MeshStandardMaterial({
+        color: 0x0a2638,
+        emissive: 0x04131d,
+        emissiveIntensity: 0.55,
+        roughness: 0.28,
+        metalness: 0.06,
         transparent: true,
-        opacity: 0.2,
+        opacity: 0.93,
+      }),
+    );
+    ocean.rotation.x = -Math.PI / 2;
+    ocean.position.set(25, -12.4, 0);
+    ocean.receiveShadow = true;
+    scene.add(ocean);
+
+    const oceanGlow = new THREE.Mesh(
+      new THREE.RingGeometry(85, 230, 140),
+      new THREE.MeshBasicMaterial({
+        color: 0x164861,
+        transparent: true,
+        opacity: 0.12,
+        side: THREE.DoubleSide,
         depthWrite: false,
       }),
     );
-    lowerMist.rotation.x = -Math.PI / 2;
-    lowerMist.position.y = -22;
-    scene.add(lowerMist);
+    oceanGlow.rotation.x = -Math.PI / 2;
+    oceanGlow.position.set(25, -12.1, 0);
+    scene.add(oceanGlow);
 
     const starsGeometry = new THREE.BufferGeometry();
     const starPositions: number[] = [];
-    for (let i = 0; i < 520; i += 1) {
-      const radius = 90 + Math.random() * 120;
+    for (let i = 0; i < 620; i += 1) {
+      const radius = 150 + Math.random() * 220;
       const angle = Math.random() * Math.PI * 2;
       starPositions.push(
-        Math.cos(angle) * radius,
-        -24 + Math.random() * 135,
+        25 + Math.cos(angle) * radius,
+        -35 + Math.random() * 230,
         Math.sin(angle) * radius,
       );
     }
@@ -1398,31 +398,101 @@ export default function PortfolioWorld() {
     const stars = new THREE.Points(
       starsGeometry,
       new THREE.PointsMaterial({
-        color: 0xcfeaff,
-        size: 0.09,
+        color: 0xd8efff,
+        size: 0.12,
         transparent: true,
-        opacity: 0.68,
+        opacity: 0.65,
+        depthWrite: false,
       }),
     );
     scene.add(stars);
 
+    const { curve: routeCurve, route, pulses } = createRoute();
+    scene.add(route, ...pulses);
+
+    const centralLabel = createIslandLabel("HUB · LANCIANO", "#f2b84b");
+    centralLabel.position.set(-30, 29, 0);
+    scene.add(centralLabel);
+
+    const cazzeggioLabel = createIslandLabel("CAZZEGGIO", "#63ead8");
+    cazzeggioLabel.position.set(88, 26, 8);
+    cazzeggioLabel.scale.multiplyScalar(0.82);
+    scene.add(cazzeggioLabel);
+
+    const interactiveMeshes: THREE.Object3D[] = [];
+    const loadedIslands: THREE.Object3D[] = [];
+    let disposed = false;
+    const loader = new GLTFLoader();
+
+    const loadIsland = (
+      url: string,
+      id: WorldNodeId,
+      position: THREE.Vector3,
+      scale: number,
+    ) =>
+      new Promise<void>((resolve, reject) => {
+        loader.load(
+          url,
+          (gltf) => {
+            if (disposed) return;
+            const island = prepareIsland(
+              gltf.scene,
+              id,
+              position,
+              scale,
+              interactiveMeshes,
+            );
+            island.name = id === "profile" ? "Lanciano_Central_Hub" : "Cazzeggio_Island";
+            scene.add(island);
+            loadedIslands.push(island);
+            resolve();
+          },
+          undefined,
+          reject,
+        );
+      });
+
+    Promise.all([
+      loadIsland(
+        "/models/lanciano-central-island.glb",
+        "profile",
+        CENTRAL_POSITION,
+        0.55,
+      ),
+      loadIsland(
+        "/models/maldives-leisure-island.glb",
+        "cazzeggio",
+        CAZZEGGIO_POSITION,
+        0.52,
+      ),
+    ])
+      .then(() => {
+        if (!disposed) setLoaded(true);
+      })
+      .catch(() => {
+        if (!disposed) {
+          setWebglError(true);
+          setLoaded(true);
+        }
+      });
+
     const raycaster = new THREE.Raycaster();
     const pointer = new THREE.Vector2();
     let pointerDown = { x: 0, y: 0 };
-    let activeSceneId: AttractionId | null = null;
     let cameraGoal = OVERVIEW_CAMERA.clone();
     let targetGoal = OVERVIEW_TARGET.clone();
+    let cameraTransitioning = false;
 
     selectRef.current = (id) => {
-      activeSceneId = id;
-      const content = ATTRACTIONS.find((item) => item.id === id);
-      if (content) {
-        cameraGoal.set(...content.camera);
-        targetGoal.set(...content.target);
+      const node = WORLD_NODES.find((item) => item.id === id);
+      if (node) {
+        cameraGoal.set(...node.camera);
+        targetGoal.set(...node.target);
       } else {
         cameraGoal.copy(OVERVIEW_CAMERA);
         targetGoal.copy(OVERVIEW_TARGET);
       }
+      cameraTransitioning = true;
       controls.enabled = false;
     };
 
@@ -1432,32 +502,34 @@ export default function PortfolioWorld() {
       pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     };
 
-    const findAttraction = () => {
+    const findNode = () => {
       if (!interactiveMeshes.length) return null;
       raycaster.setFromCamera(pointer, camera);
       const intersections = raycaster.intersectObjects(interactiveMeshes, false);
-      return (intersections[0]?.object.userData.attractionId ?? null) as
-        | AttractionId
+      return (intersections[0]?.object.userData.worldNodeId ?? null) as
+        | WorldNodeId
         | null;
     };
 
     const onPointerMove = (event: PointerEvent) => {
       updatePointer(event);
-      const hovered = findAttraction();
-      renderer.domElement.style.cursor = hovered ? "pointer" : "grab";
+      renderer.domElement.style.cursor = findNode() ? "pointer" : "grab";
     };
     const onPointerDown = (event: PointerEvent) => {
       pointerDown = { x: event.clientX, y: event.clientY };
     };
     const onPointerUp = (event: PointerEvent) => {
-      const moved = Math.hypot(
-        event.clientX - pointerDown.x,
-        event.clientY - pointerDown.y,
-      );
-      if (moved > 7) return;
+      if (
+        Math.hypot(
+          event.clientX - pointerDown.x,
+          event.clientY - pointerDown.y,
+        ) > 7
+      ) {
+        return;
+      }
       updatePointer(event);
-      const id = findAttraction();
-      if (id) selectAttraction(id);
+      const id = findNode();
+      if (id) selectNode(id);
     };
 
     renderer.domElement.addEventListener("pointermove", onPointerMove);
@@ -1469,69 +541,61 @@ export default function PortfolioWorld() {
       const height = mount.clientHeight;
       camera.aspect = width / height;
       camera.updateProjectionMatrix();
-      renderer.setSize(width, height, false);
+      renderer.setSize(width, height);
       renderer.setPixelRatio(
-        Math.min(window.devicePixelRatio, width < 700 ? 1.25 : 1.65),
+        Math.min(window.devicePixelRatio, width < 700 ? 1.2 : 1.6),
       );
     };
     window.addEventListener("resize", onResize);
 
-    const timer = new THREE.Timer();
-    const reduceMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    let animationFrame = 0;
-
+    const clock = new THREE.Clock();
+    let frame = 0;
     const animate = () => {
-      timer.update();
-      const elapsed = timer.getElapsed();
-      const delta = Math.min(timer.getDelta(), 0.04);
-      const motionScale = reduceMotion ? 0.22 : 1;
+      frame = window.requestAnimationFrame(animate);
+      const elapsed = clock.getElapsedTime();
 
-      mixer?.update(delta * motionScale);
+      pulses.forEach((pulse, index) => {
+        const t = (elapsed * 0.075 + pulse.userData.routeOffset) % 1;
+        pulse.position.copy(routeCurve.getPointAt(t));
+        const scale = 0.62 + Math.sin(elapsed * 2.6 + index) * 0.12;
+        pulse.scale.setScalar(scale);
+      });
 
-      stars.rotation.y = elapsed * 0.0025 * motionScale;
-      lowerMist.material.opacity =
-        0.19 + Math.sin(elapsed * 0.4) * 0.025 * motionScale;
+      route.material.emissiveIntensity =
+        0.65 + Math.sin(elapsed * 1.4) * 0.14;
+      centralLabel.position.y = 29 + Math.sin(elapsed * 0.8) * 0.35;
+      cazzeggioLabel.position.y = 26 + Math.sin(elapsed * 0.8 + 1.2) * 0.3;
+      stars.rotation.y = elapsed * 0.004;
 
-      if (!controls.enabled) {
+      if (cameraTransitioning) {
         camera.position.lerp(cameraGoal, 0.055);
-        controls.target.lerp(targetGoal, 0.065);
+        controls.target.lerp(targetGoal, 0.07);
         if (
-          camera.position.distanceTo(cameraGoal) < 0.08 &&
-          controls.target.distanceTo(targetGoal) < 0.05
+          camera.position.distanceTo(cameraGoal) < 0.2 &&
+          controls.target.distanceTo(targetGoal) < 0.12
         ) {
+          cameraTransitioning = false;
           controls.enabled = true;
         }
-      }
-      if (!activeSceneId && controls.enabled) {
-        cameraGoal.copy(camera.position);
-        targetGoal.copy(controls.target);
       }
 
       controls.update();
       renderer.render(scene, camera);
-      animationFrame = requestAnimationFrame(animate);
     };
-
-    animationFrame = requestAnimationFrame(animate);
+    animate();
 
     return () => {
       disposed = true;
-      cancelAnimationFrame(animationFrame);
+      window.cancelAnimationFrame(frame);
       window.removeEventListener("resize", onResize);
       renderer.domElement.removeEventListener("pointermove", onPointerMove);
       renderer.domElement.removeEventListener("pointerdown", onPointerDown);
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       controls.dispose();
+      selectRef.current = () => {};
+
       scene.traverse((object) => {
-        if (object instanceof THREE.Sprite) {
-          if (object.material.map) object.material.map.dispose();
-          object.material.dispose();
-        } else if (
-          object instanceof THREE.Mesh ||
-          object instanceof THREE.Points
-        ) {
+        if (object instanceof THREE.Mesh || object instanceof THREE.Points) {
           object.geometry.dispose();
           const materials = Array.isArray(object.material)
             ? object.material
@@ -1542,80 +606,87 @@ export default function PortfolioWorld() {
             }
             material.dispose();
           });
+        } else if (object instanceof THREE.Sprite) {
+          object.material.map?.dispose();
+          object.material.dispose();
         }
       });
+      loadedIslands.length = 0;
       renderer.dispose();
       renderer.domElement.remove();
     };
-  }, [selectAttraction]);
+  }, [selectNode]);
 
   return (
-    <main className="island-shell">
-      <div className="island-aurora island-aurora--purple" />
-      <div className="island-aurora island-aurora--aqua" />
-      <div ref={mountRef} className="island-canvas" aria-hidden="true" />
+    <main className="archipelago-shell">
+      <div className="archipelago-aurora archipelago-aurora--gold" />
+      <div className="archipelago-aurora archipelago-aurora--aqua" />
+      <div ref={mountRef} className="archipelago-canvas" aria-hidden="true" />
 
       <header className="brand">
         <button
           className="brand-mark"
-          onClick={() => selectAttraction(null)}
+          onClick={() => selectNode(null)}
           aria-label={copy.overviewLabel}
         >
-          C
+          R
         </button>
         <div>
-          <p>CAZZEGGIO</p>
+          <p>{copy.brand}</p>
           <small>{copy.brandMeta}</small>
         </div>
       </header>
 
-      <div className="language-switcher" role="group" aria-label={copy.languageSelector}>
-        <button
-          type="button"
-          className={language === "it" ? "active" : ""}
-          onClick={() => setLanguage("it")}
-          aria-label="Italiano"
-          aria-pressed={language === "it"}
-        >
-          <LanguageFlag language="it" />
-          <small>IT</small>
-        </button>
-        <button
-          type="button"
-          className={language === "en" ? "active" : ""}
-          onClick={() => setLanguage("en")}
-          aria-label="English"
-          aria-pressed={language === "en"}
-        >
-          <LanguageFlag language="en" />
-          <small>EN</small>
-        </button>
+      <div
+        className="language-switcher"
+        role="group"
+        aria-label={copy.languageSelector}
+      >
+        {(["it", "en"] as const).map((item) => (
+          <button
+            key={item}
+            type="button"
+            className={language === item ? "active" : ""}
+            onClick={() => setLanguage(item)}
+            aria-label={item === "it" ? "Italiano" : "English"}
+            aria-pressed={language === item}
+          >
+            <LanguageFlag language={item} />
+            <small>{item.toUpperCase()}</small>
+          </button>
+        ))}
       </div>
 
       <section
-        className={`island-intro ${selected ? "island-intro--hidden" : ""}`}
+        className={`archipelago-intro ${
+          selected ? "archipelago-intro--hidden" : ""
+        }`}
         aria-hidden={Boolean(selected)}
       >
-        <p className="island-kicker">{copy.kicker}</p>
+        <p className="archipelago-kicker">{copy.kicker}</p>
         <h1>
           {copy.headlineStart}
           <br />
-          <em>{copy.headlineEnd}</em>
+          <em>{copy.headlineAccent}</em>
         </h1>
         <p>{copy.intro}</p>
       </section>
 
+      <aside className="route-status" aria-label={copy.routeActive}>
+        <span />
+        <div>
+          <small>{copy.routeActive}</small>
+          <strong>{copy.routeName}</strong>
+        </div>
+      </aside>
+
       <aside
-        className={`attraction-card ${
-          selected ? "attraction-card--open" : ""
-        } ${
-          selectedId === "beach"
-            ? "attraction-card--left"
-            : ""
+        className={`node-card ${selected ? "node-card--open" : ""} ${
+          selectedId === "cazzeggio" ? "node-card--left" : ""
         }`}
         style={
           selected
-            ? ({ "--attraction-accent": selected.accent } as React.CSSProperties)
+            ? ({ "--node-accent": selected.accent } as React.CSSProperties)
             : undefined
         }
         aria-live="polite"
@@ -1624,7 +695,7 @@ export default function PortfolioWorld() {
           <>
             <button
               className="card-close"
-              onClick={() => selectAttraction(null)}
+              onClick={() => selectNode(null)}
               aria-label={copy.closeCard}
             >
               <span />
@@ -1634,42 +705,68 @@ export default function PortfolioWorld() {
             <p className="card-eyebrow">{selectedContent.eyebrow}</p>
             <h2>{selectedContent.title}</h2>
             <p className="card-lead">{selectedContent.description}</p>
+
+            {selected.id === "profile" && (
+              <div className="profile-slots">
+                <span>Profilo</span>
+                <span>Esperienze</span>
+                <span>Progetti</span>
+              </div>
+            )}
+
             <div className="card-divider" />
             <p className="card-detail">{selectedContent.detail}</p>
-            <button className="card-action" type="button">
-              {copy.cardAction}
-              <span aria-hidden="true">↗</span>
-            </button>
+
+            {selected.id === "cazzeggio" ? (
+              <a
+                className="card-action"
+                href="https://cazzeggia.online"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {selectedContent.action}
+                <span aria-hidden="true">↗</span>
+              </a>
+            ) : (
+              <div className="card-pending">
+                <i />
+                {copy.profileStatus}
+              </div>
+            )}
           </>
         )}
       </aside>
 
       <nav className="island-map" aria-label={copy.mapLabel}>
         <p>{copy.explore}</p>
-        {ATTRACTIONS.map((attraction) => (
+        {WORLD_NODES.map((node) => (
           <button
-            key={attraction.id}
-            className={selectedId === attraction.id ? "active" : ""}
-            onClick={() => selectAttraction(attraction.id)}
-            aria-label={attraction.copy[language].title}
+            key={node.id}
+            className={selectedId === node.id ? "active" : ""}
+            onClick={() => selectNode(node.id)}
+            aria-label={node.copy[language].title}
           >
-            <span
-              style={{ "--pin-color": attraction.accent } as React.CSSProperties}
-            />
-            <small>{attraction.index}</small>
+            <span style={{ "--pin-color": node.accent } as React.CSSProperties} />
+            <strong>{node.id === "profile" ? "Lanciano" : "Cazzeggio"}</strong>
+            <small>{node.index}</small>
           </button>
         ))}
       </nav>
 
-      <div className="island-hint" aria-hidden="true">
+      <div className="archipelago-hint" aria-hidden="true">
         <span>
           <i />
         </span>
         {copy.hint}
       </div>
 
-      <div className={`island-loader ${loaded ? "island-loader--done" : ""}`}>
-        <div className="loader-waterfall">
+      <div
+        className={`archipelago-loader ${
+          loaded ? "archipelago-loader--done" : ""
+        }`}
+      >
+        <div className="loader-route">
+          <i />
           <i />
           <i />
           <i />
@@ -1678,7 +775,7 @@ export default function PortfolioWorld() {
       </div>
 
       {webglError && (
-        <div className="island-fallback">
+        <div className="archipelago-fallback">
           <h2>{copy.errorTitle}</h2>
           <p>{copy.errorBody}</p>
         </div>

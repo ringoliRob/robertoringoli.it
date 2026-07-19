@@ -4,5 +4,6 @@ out
 dist
 *.log
 *.tsbuildinfo
+*.blend1
 .DS_Store
 tmp/blender-previews/*.png
