@@ -23,24 +23,24 @@ type WorldNode = {
   target: [number, number, number];
 };
 
-const CENTRAL_POSITION = new THREE.Vector3(-30, 0, 0);
-const CAZZEGGIO_POSITION = new THREE.Vector3(88, 0, 8);
-const OVERVIEW_CAMERA = new THREE.Vector3(156, 112, 192);
-const OVERVIEW_TARGET = new THREE.Vector3(27, -2, 3);
+const CENTRAL_POSITION = new THREE.Vector3(-28, 0, 0);
+const CAZZEGGIO_POSITION = new THREE.Vector3(58, 0, 6);
+const OVERVIEW_CAMERA = new THREE.Vector3(122, 92, 160);
+const OVERVIEW_TARGET = new THREE.Vector3(12, -2, 3);
 
 const WORLD_NODES: WorldNode[] = [
   {
     id: "profile",
     index: "00",
     accent: "#f2b84b",
-    camera: [56, 58, 108],
-    target: [-30, 1, 0],
+    camera: [45, 55, 92],
+    target: [-28, 1, 0],
     copy: {
       it: {
         eyebrow: "Hub centrale · Lanciano",
         title: "Roberto Ringoli",
         description:
-          "Questa è l’isola centrale del mio arcipelago digitale: il luogo da cui partono tutti i percorsi.",
+          "Questa è l’isola centrale del mio arcipelago digitale e il punto di accesso a tutto ciò che mi riguarda.",
         detail:
           "Qui troverai il mio profilo, le esperienze, i progetti e tutto ciò che mi riguarda. La struttura è pronta per i contenuti che aggiungeremo insieme.",
         action: "Contenuti in arrivo",
@@ -49,7 +49,7 @@ const WORLD_NODES: WorldNode[] = [
         eyebrow: "Central hub · Lanciano",
         title: "Roberto Ringoli",
         description:
-          "This is the central island of my digital archipelago: the place where every path begins.",
+          "This is the central island of my digital archipelago and the gateway to everything about me.",
         detail:
           "This space will contain my profile, experience, projects, and everything about me. The structure is ready for the content we will add together.",
         action: "Content coming soon",
@@ -60,8 +60,8 @@ const WORLD_NODES: WorldNode[] = [
     id: "cazzeggio",
     index: "01",
     accent: "#63ead8",
-    camera: [142, 55, 96],
-    target: [88, 1, 8],
+    camera: [104, 48, 72],
+    target: [58, 1, 6],
     copy: {
       it: {
         eyebrow: "Prima destinazione · Casual gaming",
@@ -69,7 +69,7 @@ const WORLD_NODES: WorldNode[] = [
         description:
           "L’isola dedicata al tempo perso bene: giochi leggeri, esperimenti e nessuna fretta di concludere qualcosa.",
         detail:
-          "È il primo percorso attivo dell’arcipelago. Altre isole si collegheranno in futuro partendo sempre dall’hub centrale.",
+          "È la prima isola affiancata a Lanciano. In futuro altre destinazioni troveranno posto nello stesso arcipelago.",
         action: "Visita Cazzeggio",
       },
       en: {
@@ -78,7 +78,7 @@ const WORLD_NODES: WorldNode[] = [
         description:
           "The island devoted to time well wasted: casual games, experiments, and no pressure to get anything done.",
         detail:
-          "It is the archipelago’s first active route. Future islands will always branch out from the central hub.",
+          "It is the first island beside Lanciano. More destinations will join the same archipelago in the future.",
         action: "Visit Cazzeggio",
       },
     },
@@ -95,15 +95,13 @@ const UI_COPY = {
     headlineStart: "Il mio",
     headlineAccent: "arcipelago digitale.",
     intro:
-      "Lanciano è il punto centrale: clicca sull’isola per aprire il mio profilo oppure segui il primo percorso verso Cazzeggio.",
-    mapLabel: "Isole collegate",
+      "Lanciano è il punto centrale: clicca sull’isola per aprire il mio profilo oppure scegli Cazzeggio, subito accanto.",
+    mapLabel: "Isole disponibili",
     explore: "Destinazioni",
     hint: "Trascina · zooma · scegli un’isola",
-    loading: "Sto collegando le isole",
+    loading: "Sto preparando le isole",
     closeCard: "Chiudi la scheda",
     profileStatus: "Profilo in preparazione",
-    routeActive: "1 percorso attivo",
-    routeName: "Lanciano → Cazzeggio",
     errorTitle: "L’arcipelago non riesce a partire",
     errorBody: "I modelli 3D non sono riusciti a caricarsi in questo browser.",
   },
@@ -116,15 +114,13 @@ const UI_COPY = {
     headlineStart: "My",
     headlineAccent: "digital archipelago.",
     intro:
-      "Lanciano is the central hub: click the island to open my profile, or follow the first route towards Cazzeggio.",
-    mapLabel: "Connected islands",
+      "Lanciano is the central hub: click the island to open my profile, or choose Cazzeggio right beside it.",
+    mapLabel: "Available islands",
     explore: "Destinations",
     hint: "Drag · zoom · choose an island",
-    loading: "Connecting the islands",
+    loading: "Preparing the islands",
     closeCard: "Close panel",
     profileStatus: "Profile in progress",
-    routeActive: "1 active route",
-    routeName: "Lanciano → Cazzeggio",
     errorTitle: "The archipelago could not start",
     errorBody: "The 3D models could not be loaded in this browser.",
   },
@@ -187,49 +183,6 @@ function createIslandLabel(text: string, accent: string) {
   sprite.scale.set(23, 4.8, 1);
   sprite.renderOrder = 20;
   return sprite;
-}
-
-function createRoute() {
-  const curve = new THREE.CatmullRomCurve3(
-    [
-      new THREE.Vector3(13, 0.8, 3),
-      new THREE.Vector3(30, -0.5, 12),
-      new THREE.Vector3(49, -1.6, 15),
-      new THREE.Vector3(66, 0.3, 9),
-    ],
-    false,
-    "catmullrom",
-    0.38,
-  );
-
-  const routeMaterial = new THREE.MeshStandardMaterial({
-    color: 0xe7bf71,
-    emissive: 0x7f5420,
-    emissiveIntensity: 0.72,
-    roughness: 0.46,
-    metalness: 0.08,
-  });
-  const route = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 120, 0.42, 10, false),
-    routeMaterial,
-  );
-  route.castShadow = true;
-
-  const pulseMaterial = new THREE.MeshBasicMaterial({
-    color: 0xffe5aa,
-    transparent: true,
-    opacity: 0.95,
-  });
-  const pulses = Array.from({ length: 5 }, (_, index) => {
-    const pulse = new THREE.Mesh(
-      new THREE.SphereGeometry(0.8, 14, 10),
-      pulseMaterial.clone(),
-    );
-    pulse.userData.routeOffset = index / 5;
-    return pulse;
-  });
-
-  return { curve, route, pulses };
 }
 
 function prepareIsland(
@@ -407,15 +360,16 @@ export default function PortfolioWorld() {
     );
     scene.add(stars);
 
-    const { curve: routeCurve, route, pulses } = createRoute();
-    scene.add(route, ...pulses);
-
     const centralLabel = createIslandLabel("HUB · LANCIANO", "#f2b84b");
-    centralLabel.position.set(-30, 29, 0);
+    centralLabel.position.set(CENTRAL_POSITION.x, 29, CENTRAL_POSITION.z);
     scene.add(centralLabel);
 
     const cazzeggioLabel = createIslandLabel("CAZZEGGIO", "#63ead8");
-    cazzeggioLabel.position.set(88, 26, 8);
+    cazzeggioLabel.position.set(
+      CAZZEGGIO_POSITION.x,
+      26,
+      CAZZEGGIO_POSITION.z,
+    );
     cazzeggioLabel.scale.multiplyScalar(0.82);
     scene.add(cazzeggioLabel);
 
@@ -554,15 +508,6 @@ export default function PortfolioWorld() {
       frame = window.requestAnimationFrame(animate);
       const elapsed = clock.getElapsedTime();
 
-      pulses.forEach((pulse, index) => {
-        const t = (elapsed * 0.075 + pulse.userData.routeOffset) % 1;
-        pulse.position.copy(routeCurve.getPointAt(t));
-        const scale = 0.62 + Math.sin(elapsed * 2.6 + index) * 0.12;
-        pulse.scale.setScalar(scale);
-      });
-
-      route.material.emissiveIntensity =
-        0.65 + Math.sin(elapsed * 1.4) * 0.14;
       centralLabel.position.y = 29 + Math.sin(elapsed * 0.8) * 0.35;
       cazzeggioLabel.position.y = 26 + Math.sin(elapsed * 0.8 + 1.2) * 0.3;
       stars.rotation.y = elapsed * 0.004;
@@ -672,14 +617,6 @@ export default function PortfolioWorld() {
         <p>{copy.intro}</p>
       </section>
 
-      <aside className="route-status" aria-label={copy.routeActive}>
-        <span />
-        <div>
-          <small>{copy.routeActive}</small>
-          <strong>{copy.routeName}</strong>
-        </div>
-      </aside>
-
       <aside
         className={`node-card ${selected ? "node-card--open" : ""} ${
           selectedId === "cazzeggio" ? "node-card--left" : ""
@@ -765,9 +702,7 @@ export default function PortfolioWorld() {
           loaded ? "archipelago-loader--done" : ""
         }`}
       >
-        <div className="loader-route">
-          <i />
-          <i />
+        <div className="loader-islands">
           <i />
           <i />
         </div>
