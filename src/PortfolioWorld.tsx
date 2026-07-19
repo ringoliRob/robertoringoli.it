@@ -460,6 +460,7 @@ export default function PortfolioWorld() {
 
     const interactiveMeshes: THREE.Object3D[] = [];
     const loadedIslands: THREE.Object3D[] = [];
+    const animationMixers: THREE.AnimationMixer[] = [];
     let disposed = false;
     const loader = new GLTFLoader();
 
@@ -484,6 +485,13 @@ export default function PortfolioWorld() {
             island.name = id === "profile" ? "Lanciano_Central_Hub" : "Cazzeggio_Island";
             scene.add(island);
             loadedIslands.push(island);
+            if (gltf.animations.length > 0) {
+              const mixer = new THREE.AnimationMixer(island);
+              gltf.animations.forEach((clip) => {
+                mixer.clipAction(clip).play();
+              });
+              animationMixers.push(mixer);
+            }
             resolve();
           },
           undefined,
@@ -591,8 +599,10 @@ export default function PortfolioWorld() {
     let frame = 0;
     const animate = () => {
       frame = window.requestAnimationFrame(animate);
-      const elapsed = clock.getElapsedTime();
+      const delta = clock.getDelta();
+      const elapsed = clock.elapsedTime;
 
+      animationMixers.forEach((mixer) => mixer.update(delta));
       centralLabel.position.y = 29 + Math.sin(elapsed * 0.8) * 0.35;
       cazzeggioLabel.position.y = 26 + Math.sin(elapsed * 0.8 + 1.2) * 0.3;
       stars.rotation.y = elapsed * 0.004;
@@ -629,6 +639,10 @@ export default function PortfolioWorld() {
       renderer.domElement.removeEventListener("pointerup", onPointerUp);
       controls.dispose();
       selectRef.current = () => {};
+      animationMixers.forEach((mixer) => {
+        mixer.stopAllAction();
+        mixer.uncacheRoot(mixer.getRoot());
+      });
 
       scene.traverse((object) => {
         if (object instanceof THREE.Mesh || object instanceof THREE.Points) {
