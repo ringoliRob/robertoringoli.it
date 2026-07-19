@@ -282,7 +282,7 @@ export default function PortfolioWorld() {
       42,
       mount.clientWidth / mount.clientHeight,
       0.1,
-      600,
+      1200,
     );
     camera.position.copy(OVERVIEW_CAMERA);
 
@@ -332,8 +332,9 @@ export default function PortfolioWorld() {
             float heightMix = direction.y * 0.5 + 0.5;
             vec3 color = mix(lowerColor, horizonColor, smoothstep(0.08, 0.48, heightMix));
             color = mix(color, topColor, smoothstep(0.48, 0.94, heightMix));
-            float horizonGlow = 1.0 - abs(heightMix - 0.42) * 5.0;
-            color += vec3(0.34, 0.09, 0.16) * max(horizonGlow, 0.0) * 0.34;
+            float sun = max(dot(direction, normalize(vec3(-0.42, 0.2, -0.88))), 0.0);
+            color += vec3(1.0, 0.34, 0.12) * pow(sun, 95.0) * 2.4;
+            color += vec3(0.22, 0.08, 0.32) * pow(sun, 8.0) * 0.52;
             gl_FragColor = vec4(color, 1.0);
           }
         `,
@@ -404,6 +405,20 @@ export default function PortfolioWorld() {
     };
     const centralGlow = createIslandGlow(CENTRAL_POSITION, 0xff9f45, 96);
     const cazzeggioGlow = createIslandGlow(CAZZEGGIO_POSITION, 0x55d9c8, 62);
+
+    const distantSun = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: atmosphereTexture,
+        color: 0xff7544,
+        transparent: true,
+        opacity: 0.7,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    distantSun.position.set(-145, 78, -260);
+    distantSun.scale.set(86, 86, 1);
+    scene.add(distantSun);
 
     const starsGeometry = new THREE.BufferGeometry();
     const starPositions: number[] = [];
@@ -588,6 +603,7 @@ export default function PortfolioWorld() {
       centralGlow.material.opacity = 0.18 + Math.sin(elapsed * 0.7) * 0.035;
       cazzeggioGlow.material.opacity =
         0.17 + Math.sin(elapsed * 0.76 + 1.4) * 0.035;
+      distantSun.material.opacity = 0.66 + Math.sin(elapsed * 0.28) * 0.05;
 
       if (cameraTransitioning) {
         camera.position.lerp(cameraGoal, 0.055);
