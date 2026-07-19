@@ -12,13 +12,19 @@ type AttractionId =
   | "waterpark"
   | "amusement";
 
-type AttractionContent = {
-  id: AttractionId;
-  index: string;
+type Language = "it" | "en";
+
+type AttractionCopy = {
   eyebrow: string;
   title: string;
   description: string;
   detail: string;
+};
+
+type AttractionContent = {
+  id: AttractionId;
+  index: string;
+  copy: Record<Language, AttractionCopy>;
   accent: string;
   camera: [number, number, number];
   target: [number, number, number];
@@ -46,12 +52,24 @@ const ATTRACTIONS: AttractionContent[] = [
   {
     id: "beach",
     index: "00",
-    eyebrow: "Relax · Maldive",
-    title: "Tropical Beach",
-    description:
-      "Una grande spiaggia tropicale con cabanas, ombrelloni e una passerella sospesa nel blu.",
-    detail:
-      "È la parte più calma dell’isola: il punto da cui osservare il mondo, rallentare e scegliere la prossima attrazione.",
+    copy: {
+      it: {
+        eyebrow: "L’idea · Dolce far niente",
+        title: "Perdere tempo",
+        description:
+          "Cazzeggio nasce per dare alle persone come me — orgogliosamente fannullone — un posto dove perdere tempo.",
+        detail:
+          "Niente produttività e niente sensi di colpa: solo una spiaggia digitale in cui staccare, curiosare e concedersi una pausa.",
+      },
+      en: {
+        eyebrow: "The idea · Doing nothing",
+        title: "Waste some time",
+        description:
+          "Cazzeggio was born to give people like me — proudly lazy — a place where they can happily waste some time.",
+        detail:
+          "No productivity and no guilt: just a digital beach where you can switch off, explore, and take a proper break.",
+      },
+    },
     accent: "#35e0c1",
     camera: [54, 29, 82],
     target: [0, 2, 15],
@@ -59,12 +77,24 @@ const ATTRACTIONS: AttractionContent[] = [
   {
     id: "waterpark",
     index: "01",
-    eyebrow: "Acqua · Movimento",
-    title: "Water Park",
-    description:
-      "Piscine integrate nell’isola e quattro grandi scivoli che si intrecciano sopra la laguna.",
-    detail:
-      "Le vasche, le cascate e gli scivoli raccontano la parte più fluida e giocosa di questo mondo sospeso.",
+    copy: {
+      it: {
+        eyebrow: "Il sito · Casual gaming",
+        title: "Giochi senza impegno",
+        description:
+          "Una raccolta di casual game immediati, pensati per iniziare in un attimo e restare quanto vuoi.",
+        detail:
+          "Partite veloci, idee leggere e nuove scuse per cazzeggiare: il parco cresce con giochi ed esperimenti sempre diversi.",
+      },
+      en: {
+        eyebrow: "The website · Casual gaming",
+        title: "Games, no commitment",
+        description:
+          "A collection of instant casual games, designed so you can start in seconds and stay for as long as you like.",
+        detail:
+          "Quick rounds, playful ideas, and new excuses to procrastinate: the park keeps growing with fresh games and experiments.",
+      },
+    },
     accent: "#32d7ff",
     camera: [-58, 38, 48],
     target: [-16, 5, -6],
@@ -72,17 +102,100 @@ const ATTRACTIONS: AttractionContent[] = [
   {
     id: "amusement",
     index: "02",
-    eyebrow: "Luna park · Animazioni",
-    title: "Leisure Park",
-    description:
-      "Montagne russe, ruota panoramica, carosello e autoscontri vivono insieme in un piccolo parco sul mare.",
-    detail:
-      "Tutte le attrazioni usano le animazioni esportate da Blender e vengono riprodotte direttamente da Three.js.",
+    copy: {
+      it: {
+        eyebrow: "Il futuro · Community",
+        title: "Sempre in costruzione",
+        description:
+          "Cazzeggio è in costante aggiornamento: ogni attrazione può diventare un nuovo gioco, evento o piccolo esperimento.",
+        detail:
+          "Il sogno è farne una community attiva di nullafacenti: persone pronte a giocare, condividere record e non concludere nulla insieme.",
+      },
+      en: {
+        eyebrow: "The future · Community",
+        title: "Always under construction",
+        description:
+          "Cazzeggio is constantly evolving: every attraction can become a new game, event, or playful experiment.",
+        detail:
+          "The dream is an active community of professional time-wasters: people ready to play, share scores, and achieve nothing together.",
+      },
+    },
     accent: "#ff665a",
     camera: [64, 38, 38],
     target: [19, 6, -6],
   },
 ];
+
+const UI_COPY = {
+  it: {
+    brandMeta: "cazzeggia.online · Casual gaming",
+    languageSelector: "Seleziona la lingua",
+    overviewLabel: "Torna alla vista completa dell’isola",
+    kicker: "Benvenuto nel mondo di Cazzeggio",
+    headlineStart: "Il posto giusto",
+    headlineEnd: "per perdere tempo.",
+    intro:
+      "Su cazzeggia.online trovi un’isola di casual gaming per fannulloni, curiosi e professionisti del cazzeggio. È sempre in aggiornamento e sogna una community che non ha fretta di fare nulla.",
+    closeCard: "Chiudi la scheda",
+    cardAction: "Esplora l’isola",
+    mapLabel: "Storie di Cazzeggio",
+    explore: "Scopri",
+    hint: "Trascina · zooma · cazzeggia",
+    loading: "Sto caricando l’isola 3D",
+    errorTitle: "L’isola non riesce a partire",
+    errorBody: "Il modello 3D non è riuscito a caricarsi in questo browser.",
+  },
+  en: {
+    brandMeta: "cazzeggia.online · Casual gaming",
+    languageSelector: "Choose language",
+    overviewLabel: "Return to the full island view",
+    kicker: "Welcome to the world of Cazzeggio",
+    headlineStart: "The right place",
+    headlineEnd: "to waste your time.",
+    intro:
+      "At cazzeggia.online you will find a casual gaming island for slackers, curious minds, and professional procrastinators. It keeps evolving and dreams of a community in no hurry to achieve anything.",
+    closeCard: "Close panel",
+    cardAction: "Explore the island",
+    mapLabel: "Cazzeggio stories",
+    explore: "Discover",
+    hint: "Drag · zoom · waste time",
+    loading: "Loading the 3D island",
+    errorTitle: "The island could not start",
+    errorBody: "The 3D model could not be loaded in this browser.",
+  },
+} satisfies Record<Language, Record<string, string>>;
+
+function LanguageFlag({ language }: { language: Language }) {
+  if (language === "it") {
+    return (
+      <svg
+        className="flag-icon"
+        viewBox="0 0 60 40"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <rect width="20" height="40" fill="#009246" />
+        <rect x="20" width="20" height="40" fill="#fff" />
+        <rect x="40" width="20" height="40" fill="#ce2b37" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg
+      className="flag-icon"
+      viewBox="0 0 60 40"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect width="60" height="40" fill="#012169" />
+      <path d="M0 0 60 40M60 0 0 40" stroke="#fff" strokeWidth="10" />
+      <path d="M0 0 60 40M60 0 0 40" stroke="#c8102e" strokeWidth="5" />
+      <path d="M30 0v40M0 20h60" stroke="#fff" strokeWidth="14" />
+      <path d="M30 0v40M0 20h60" stroke="#c8102e" strokeWidth="8" />
+    </svg>
+  );
+}
 
 const OVERVIEW_CAMERA = new THREE.Vector3(78, 68, 112);
 const OVERVIEW_TARGET = new THREE.Vector3(0, -2, 0);
@@ -1088,15 +1201,34 @@ export default function PortfolioWorld() {
   const mountRef = useRef<HTMLDivElement>(null);
   const selectRef = useRef<(id: AttractionId | null) => void>(() => {});
   const [selectedId, setSelectedId] = useState<AttractionId | null>(null);
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") return "it";
+    const saved = window.localStorage.getItem("cazzeggio-language");
+    if (saved === "it" || saved === "en") return saved;
+    return window.navigator.language.toLowerCase().startsWith("it")
+      ? "it"
+      : "en";
+  });
   const [loaded, setLoaded] = useState(false);
   const [webglError, setWebglError] = useState(false);
   const selected =
     ATTRACTIONS.find((attraction) => attraction.id === selectedId) ?? null;
+  const selectedContent = selected?.copy[language] ?? null;
+  const copy = UI_COPY[language];
 
   const selectAttraction = useCallback((id: AttractionId | null) => {
     selectRef.current(id);
     setSelectedId(id);
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+    document.title =
+      language === "it"
+        ? "Cazzeggio — Il posto giusto per perdere tempo | cazzeggia.online"
+        : "Cazzeggio — The right place to waste your time | cazzeggia.online";
+    window.localStorage.setItem("cazzeggio-language", language);
+  }, [language]);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -1427,32 +1559,50 @@ export default function PortfolioWorld() {
         <button
           className="brand-mark"
           onClick={() => selectAttraction(null)}
-          aria-label="Torna alla vista completa dell’isola"
+          aria-label={copy.overviewLabel}
         >
           C
         </button>
         <div>
-          <p>
-            LEISURE <span>ISLAND</span>
-          </p>
-          <small>Roberto Ringoli · Digital world 01</small>
+          <p>CAZZEGGIO</p>
+          <small>{copy.brandMeta}</small>
         </div>
       </header>
+
+      <div className="language-switcher" role="group" aria-label={copy.languageSelector}>
+        <button
+          type="button"
+          className={language === "it" ? "active" : ""}
+          onClick={() => setLanguage("it")}
+          aria-label="Italiano"
+          aria-pressed={language === "it"}
+        >
+          <LanguageFlag language="it" />
+          <small>IT</small>
+        </button>
+        <button
+          type="button"
+          className={language === "en" ? "active" : ""}
+          onClick={() => setLanguage("en")}
+          aria-label="English"
+          aria-pressed={language === "en"}
+        >
+          <LanguageFlag language="en" />
+          <small>EN</small>
+        </button>
+      </div>
 
       <section
         className={`island-intro ${selected ? "island-intro--hidden" : ""}`}
         aria-hidden={Boolean(selected)}
       >
-        <p className="island-kicker">Un mondo sospeso dedicato allo svago</p>
+        <p className="island-kicker">{copy.kicker}</p>
         <h1>
-          Esplora, gioca,
+          {copy.headlineStart}
           <br />
-          poi <em>rallenta.</em>
+          <em>{copy.headlineEnd}</em>
         </h1>
-        <p>
-          Una grande isola tropicale animata in Blender e Three.js. Ruota il
-          mondo, avvicinati e scegli una delle tre aree.
-        </p>
+        <p>{copy.intro}</p>
       </section>
 
       <aside
@@ -1470,38 +1620,38 @@ export default function PortfolioWorld() {
         }
         aria-live="polite"
       >
-        {selected && (
+        {selected && selectedContent && (
           <>
             <button
               className="card-close"
               onClick={() => selectAttraction(null)}
-              aria-label="Chiudi la scheda"
+              aria-label={copy.closeCard}
             >
               <span />
               <span />
             </button>
             <p className="card-index">{selected.index}</p>
-            <p className="card-eyebrow">{selected.eyebrow}</p>
-            <h2>{selected.title}</h2>
-            <p className="card-lead">{selected.description}</p>
+            <p className="card-eyebrow">{selectedContent.eyebrow}</p>
+            <h2>{selectedContent.title}</h2>
+            <p className="card-lead">{selectedContent.description}</p>
             <div className="card-divider" />
-            <p className="card-detail">{selected.detail}</p>
+            <p className="card-detail">{selectedContent.detail}</p>
             <button className="card-action" type="button">
-              Esplora in 3D
+              {copy.cardAction}
               <span aria-hidden="true">↗</span>
             </button>
           </>
         )}
       </aside>
 
-      <nav className="island-map" aria-label="Attrazioni dell’isola">
-        <p>Esplora</p>
+      <nav className="island-map" aria-label={copy.mapLabel}>
+        <p>{copy.explore}</p>
         {ATTRACTIONS.map((attraction) => (
           <button
             key={attraction.id}
             className={selectedId === attraction.id ? "active" : ""}
             onClick={() => selectAttraction(attraction.id)}
-            aria-label={attraction.title}
+            aria-label={attraction.copy[language].title}
           >
             <span
               style={{ "--pin-color": attraction.accent } as React.CSSProperties}
@@ -1515,7 +1665,7 @@ export default function PortfolioWorld() {
         <span>
           <i />
         </span>
-        Trascina · zooma · scopri
+        {copy.hint}
       </div>
 
       <div className={`island-loader ${loaded ? "island-loader--done" : ""}`}>
@@ -1524,13 +1674,13 @@ export default function PortfolioWorld() {
           <i />
           <i />
         </div>
-        <p>Sto caricando l’isola 3D</p>
+        <p>{copy.loading}</p>
       </div>
 
       {webglError && (
         <div className="island-fallback">
-          <h2>L’isola non riesce a partire</h2>
-          <p>Il modello 3D non è riuscito a caricarsi in questo browser.</p>
+          <h2>{copy.errorTitle}</h2>
+          <p>{copy.errorBody}</p>
         </div>
       )}
     </main>

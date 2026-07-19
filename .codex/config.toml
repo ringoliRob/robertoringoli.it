@@ -1,0 +1,17 @@
+[mcp_servers.portfolio_blender]
+command = "node"
+args = ["tools/blender-mcp/server.mjs"]
+cwd = "C:\\Users\\rober\\Documents\\GitHub\\robertoringoli.it"
+env = { BLENDER_PROJECT_ROOT = "C:\\Users\\rober\\Documents\\GitHub\\robertoringoli.it", BLENDER_MCP_HOST = "127.0.0.1", BLENDER_MCP_PORT = "9876", BLENDER_MCP_TOKEN = "blender-local" }
+startup_timeout_sec = 10
+tool_timeout_sec = 120
+enabled = true
+required = false
+default_tools_approval_mode = "writes"
+
+[mcp_servers.portfolio_blender.tools.blender_execute_python]
+approval_mode = "prompt"
+
+[mcp_servers.portfolio_blender.tools.blender_delete_objects]
+approval_mode = "prompt"
+

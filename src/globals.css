@@ -155,6 +155,68 @@ button {
   text-transform: uppercase;
 }
 
+.language-switcher {
+  position: absolute;
+  z-index: 8;
+  top: 31px;
+  right: 36px;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 16px;
+  background: rgba(5, 14, 27, 0.62);
+  box-shadow:
+    0 14px 40px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+
+.language-switcher button {
+  display: flex;
+  width: 46px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: rgba(232, 240, 245, 0.52);
+  background: transparent;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.language-switcher button:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.language-switcher button.active {
+  border-color: rgba(99, 234, 216, 0.35);
+  color: #fff;
+  background: rgba(88, 234, 215, 0.12);
+}
+
+.flag-icon {
+  width: 21px;
+  height: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 2px;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.24);
+  flex: 0 0 auto;
+}
+
+.language-switcher small {
+  font-family: "DM Mono", monospace;
+  font-size: 8px;
+  letter-spacing: 0.05em;
+}
+
 .island-intro {
   position: absolute;
   z-index: 4;
@@ -621,6 +683,26 @@ button {
 
   .brand p {
     font-size: 12px;
+  }
+
+  .brand small {
+    max-width: 145px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .language-switcher {
+    top: 18px;
+    right: 14px;
+  }
+
+  .language-switcher button {
+    width: 32px;
+  }
+
+  .language-switcher button small {
+    display: none;
   }
 
   .island-intro {

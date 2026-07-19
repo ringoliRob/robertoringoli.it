@@ -1,0 +1,14 @@
+schema_version = "1.0.0"
+
+id = "portfolio_mcp_bridge"
+version = "0.2.0"
+name = "Portfolio MCP Bridge"
+tagline = "Controlla Blender da Codex tramite un ponte MCP locale"
+maintainer = "Roberto Ringoli"
+type = "add-on"
+
+blender_version_min = "4.2.0"
+license = ["SPDX:GPL-3.0-or-later"]
+
+[permissions]
+network = "Comunica con Codex tramite TCP locale su 127.0.0.1"
