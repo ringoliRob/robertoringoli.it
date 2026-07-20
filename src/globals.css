@@ -868,3 +868,108 @@ a {
     scroll-behavior: auto !important;
   }
 }
+
+/* Intro: cielo al tramonto avvolto da nuvole bianche soffici; ci si è dentro,
+   poi si aprono e si diradano mentre la camera scende tra le isole */
+.intro-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(70% 55% at 50% 46%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0) 62%),
+    linear-gradient(180deg, #9fc0d8 0%, #cdc7cf 46%, #eed0bf 78%, #f3c6a2 100%);
+  opacity: 1;
+  transition: opacity 3s ease;
+}
+/* due strati di batuffoli: bianchi al centro, bordo grigio-azzurro + ombra = volume */
+.intro-veil::before,
+.intro-veil::after {
+  content: "";
+  position: absolute;
+  inset: -28%;
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(closest-side, #ffffff 52%, rgba(214, 220, 234, 0.55) 76%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(closest-side, #ffffff 50%, rgba(210, 216, 232, 0.5) 78%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(closest-side, #fdfdff 54%, rgba(206, 214, 230, 0.5) 80%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(closest-side, #ffffff 48%, rgba(216, 222, 236, 0.5) 78%, rgba(255, 255, 255, 0) 100%),
+    radial-gradient(closest-side, #ffffff 50%, rgba(212, 218, 234, 0.5) 80%, rgba(255, 255, 255, 0) 100%);
+  background-size: 46% 40%, 40% 34%, 52% 44%, 36% 32%, 48% 40%;
+  background-position: 10% 30%, 66% 20%, 44% 70%, 86% 58%, 26% 88%;
+  filter: blur(5px) drop-shadow(0 12px 14px rgba(110, 120, 145, 0.22));
+  animation: cloud-drift 20s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+.intro-veil::after {
+  background-size: 42% 36%, 54% 46%, 38% 32%, 50% 42%, 40% 34%;
+  background-position: 30% 46%, 82% 76%, 6% 56%, 60% 10%, 96% 32%;
+  animation-duration: 27s;
+  animation-direction: alternate-reverse;
+  opacity: 0.9;
+}
+@keyframes cloud-drift {
+  from {
+    transform: translate3d(-2.5%, -1.2%, 0) scale(1.05);
+  }
+  to {
+    transform: translate3d(2.5%, 1.2%, 0) scale(1.13);
+  }
+}
+.intro-veil-text {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 24ch;
+  margin: 0 auto;
+  padding: 0 1.2rem;
+  text-align: center;
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-weight: 600;
+  letter-spacing: 0.015em;
+  color: #2e2740;
+  text-shadow:
+    0 2px 26px rgba(255, 255, 255, 0.95),
+    0 1px 2px rgba(110, 100, 130, 0.28);
+  animation: intro-rise 2.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: transform 3s ease, opacity 2.4s ease;
+}
+.intro-veil--done {
+  opacity: 0;
+  pointer-events: none;
+}
+.intro-veil--done::before,
+.intro-veil--done::after {
+  transform: scale(1.95);
+  opacity: 0;
+  transition: transform 3.4s ease, opacity 3.4s ease;
+}
+.intro-veil--done .intro-veil-text {
+  transform: translateY(-32px) scale(1.04);
+  opacity: 0;
+}
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-veil {
+    transition: opacity 0.5s ease;
+  }
+  .intro-veil::before,
+  .intro-veil::after {
+    animation: none;
+  }
+  .intro-veil-text {
+    animation: none;
+  }
+}

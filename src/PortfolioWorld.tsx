@@ -4,7 +4,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 type Language = "it" | "en";
-type WorldNodeId = "profile" | "cazzeggio";
+type WorldNodeId = "profile" | "cazzeggio" | "coppito";
 
 type LocalizedNode = {
   eyebrow: string;
@@ -17,6 +17,7 @@ type LocalizedNode = {
 type WorldNode = {
   id: WorldNodeId;
   index: string;
+  shortName: string;
   accent: string;
   copy: Record<Language, LocalizedNode>;
   camera: [number, number, number];
@@ -25,10 +26,20 @@ type WorldNode = {
 
 const CENTRAL_POSITION = new THREE.Vector3(-28, 0, 0);
 const CAZZEGGIO_POSITION = new THREE.Vector3(45, 0, 5);
-const OVERVIEW_CAMERA = new THREE.Vector3(105, 82, 145);
-const OVERVIEW_TARGET = new THREE.Vector3(-2, -2, 2);
-const MOBILE_OVERVIEW_CAMERA = new THREE.Vector3(165, 132, 225);
-const MOBILE_OVERVIEW_TARGET = new THREE.Vector3(-2, -4, 2);
+// Isola Università dell'Aquila (Coppito): terza destinazione, a sinistra di Lanciano.
+// Posizione e scala sono da rifinire guardando la scena nel browser.
+const COPPITO_POSITION = new THREE.Vector3(8, -5, 68);
+const COPPITO_SCALE = 2.6;
+// Entrate dei tre blocchi in coordinate LOCALI del glb (fronte sud, +z).
+const COPPITO_ENTRANCES_LOCAL: [number, number, number][] = [
+  [-4.5, 2.3, 3.0], // Blocco 0
+  [0.0, 2.3, 2.95], // Coppito 1
+  [4.5, 2.3, 3.0], // Coppito 2
+];
+const OVERVIEW_CAMERA = new THREE.Vector3(120, 106, 210);
+const OVERVIEW_TARGET = new THREE.Vector3(6, -3, 24);
+const MOBILE_OVERVIEW_CAMERA = new THREE.Vector3(188, 165, 310);
+const MOBILE_OVERVIEW_TARGET = new THREE.Vector3(6, -5, 24);
 
 const MOBILE_NODE_VIEWS: Record<
   WorldNodeId,
@@ -42,12 +53,17 @@ const MOBILE_NODE_VIEWS: Record<
     camera: [105, 62, 90],
     target: [45, -8, 5],
   },
+  coppito: {
+    camera: [30, 60, 152],
+    target: [8, -13, 68],
+  },
 };
 
 const WORLD_NODES: WorldNode[] = [
   {
     id: "profile",
     index: "00",
+    shortName: "Lanciano",
     accent: "#f2b84b",
     camera: [45, 55, 92],
     target: [-28, 1, 0],
@@ -75,6 +91,7 @@ const WORLD_NODES: WorldNode[] = [
   {
     id: "cazzeggio",
     index: "01",
+    shortName: "Cazzeggio",
     accent: "#63ead8",
     camera: [88, 46, 65],
     target: [45, 1, 5],
@@ -99,6 +116,34 @@ const WORLD_NODES: WorldNode[] = [
       },
     },
   },
+  {
+    id: "coppito",
+    index: "02",
+    shortName: "Coppito",
+    accent: "#e8b800",
+    camera: [30, 46, 124],
+    target: [8, -4, 68],
+    copy: {
+      it: {
+        eyebrow: "Seconda destinazione · I miei studi",
+        title: "Università dell’Aquila",
+        description:
+          "Il polo di Coppito, dove sto per laurearmi in Informatica all’Università degli Studi dell’Aquila: Blocco 0, Coppito 1 e Coppito 2 affacciati sulla stessa via.",
+        detail:
+          "Lungo il percorso ho superato esami come Ricerca Operativa, Ottimizzazione Combinatoria, Sistemi Operativi, Programmazione a Oggetti, Algoritmi e Algoritmi con Applicazioni (in stile LeetCode), Teoria della Calcolabilità e della Complessità, Process and Operation Scheduling, Machine Learning e Fondamenti di Intelligenza Artificiale. Appena conclusa la triennale, punto alla laurea magistrale in AICoNDA — Artificial Intelligence, Complex Networks, and Data Analytics.",
+        action: "Visita il campus",
+      },
+      en: {
+        eyebrow: "Second destination · My studies",
+        title: "University of L’Aquila",
+        description:
+          "The Coppito campus, where I’m about to graduate in Computer Science at the University of L’Aquila: Blocco 0, Coppito 1 and Coppito 2 along the same street.",
+        detail:
+          "Along the way I passed exams such as Operations Research, Combinatorial Optimization, Operating Systems, Object-Oriented Programming, Algorithms and Algorithms with Applications (LeetCode style), Computability and Complexity Theory, Process and Operation Scheduling, Machine Learning and Foundations of Artificial Intelligence. Right after my bachelor’s, I aim to start the master’s degree in AICoNDA — Artificial Intelligence, Complex Networks, and Data Analytics.",
+        action: "Visit the campus",
+      },
+    },
+  },
 ];
 
 const UI_COPY = {
@@ -116,6 +161,7 @@ const UI_COPY = {
     explore: "Destinazioni",
     hint: "Trascina · zooma · scegli un’isola",
     loading: "Sto preparando le isole",
+    welcome: "Benvenuto nel mio portfolio",
     closeCard: "Chiudi la scheda",
     errorTitle: "L’arcipelago non riesce a partire",
     errorBody: "I modelli 3D non sono riusciti a caricarsi in questo browser.",
@@ -134,6 +180,7 @@ const UI_COPY = {
     explore: "Destinations",
     hint: "Drag · zoom · choose an island",
     loading: "Preparing the islands",
+    welcome: "Welcome to my portfolio",
     closeCard: "Close panel",
     errorTitle: "The archipelago could not start",
     errorBody: "The 3D models could not be loaded in this browser.",
@@ -273,6 +320,95 @@ function createBirdFlock() {
   return flock;
 }
 
+const CONFETTI_COLORS = [
+  0xe8b800, // oro UnivAQ
+  0x1b3b6f, // blu UnivAQ
+  0xef476f,
+  0x06d6a0,
+  0xff9f1c,
+  0x9b5de5,
+  0xf4f1de,
+];
+
+type ConfettiField = {
+  points: THREE.Points;
+  update: (delta: number, elapsed: number) => void;
+  dispose: () => void;
+};
+
+// Coriandoli che sgorgano di continuo dalle entrate; posizioni e fisica in unità mondo (scalate).
+function createConfetti(
+  emitters: THREE.Vector3[],
+  scaleFactor: number,
+): ConfettiField {
+  const COUNT = 320;
+  const GRAVITY = 3.4 * scaleFactor;
+  const positions = new Float32Array(COUNT * 3);
+  const colors = new Float32Array(COUNT * 3);
+  const vel = new Float32Array(COUNT * 3);
+  const life = new Float32Array(COUNT);
+  const maxLife = new Float32Array(COUNT);
+  const sway = new Float32Array(COUNT);
+  const color = new THREE.Color();
+
+  const spawn = (i: number, prime: boolean) => {
+    const e = emitters[(Math.random() * emitters.length) | 0];
+    const s = scaleFactor;
+    positions[i * 3] = e.x + (Math.random() - 0.5) * 0.5 * s;
+    positions[i * 3 + 1] = e.y + (Math.random() - 0.5) * 0.3 * s;
+    positions[i * 3 + 2] = e.z + (Math.random() - 0.5) * 0.5 * s;
+    vel[i * 3] = (Math.random() - 0.5) * 1.7 * s;
+    vel[i * 3 + 1] = (2.6 + Math.random() * 2.2) * s;
+    vel[i * 3 + 2] = ((Math.random() - 0.5) * 1.7 + 0.6) * s;
+    maxLife[i] = 2.4 + Math.random() * 1.8;
+    life[i] = prime ? Math.random() * maxLife[i] : maxLife[i];
+    sway[i] = Math.random() * Math.PI * 2;
+    color.setHex(CONFETTI_COLORS[(Math.random() * CONFETTI_COLORS.length) | 0]);
+    colors[i * 3] = color.r;
+    colors[i * 3 + 1] = color.g;
+    colors[i * 3 + 2] = color.b;
+  };
+  for (let i = 0; i < COUNT; i += 1) spawn(i, true);
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+  const material = new THREE.PointsMaterial({
+    size: 0.16 * scaleFactor,
+    vertexColors: true,
+    transparent: true,
+    sizeAttenuation: true,
+    depthWrite: false,
+  });
+  const points = new THREE.Points(geometry, material);
+  points.frustumCulled = false;
+  const posAttr = geometry.getAttribute("position") as THREE.BufferAttribute;
+
+  const update = (delta: number, elapsed: number) => {
+    const dt = Math.min(delta, 0.04);
+    for (let i = 0; i < COUNT; i += 1) {
+      life[i] -= dt;
+      if (life[i] <= 0) {
+        spawn(i, false);
+        continue;
+      }
+      vel[i * 3 + 1] -= GRAVITY * dt;
+      const flutter = Math.sin(elapsed * 6 + sway[i]) * 0.5 * scaleFactor;
+      positions[i * 3] += (vel[i * 3] + flutter) * dt;
+      positions[i * 3 + 1] += vel[i * 3 + 1] * dt;
+      positions[i * 3 + 2] += vel[i * 3 + 2] * dt;
+    }
+    posAttr.needsUpdate = true;
+  };
+
+  const dispose = () => {
+    geometry.dispose();
+    material.dispose();
+  };
+
+  return { points, update, dispose };
+}
+
 function prepareIsland(
   source: THREE.Object3D,
   id: WorldNodeId,
@@ -300,6 +436,7 @@ export default function PortfolioWorld() {
   const [selectedId, setSelectedId] = useState<WorldNodeId | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [webglError, setWebglError] = useState(false);
+  const [introDone, setIntroDone] = useState(false);
   const [language, setLanguage] = useState<Language>(() => {
     if (typeof window === "undefined") return "it";
     const saved = window.localStorage.getItem("portfolio-language");
@@ -315,6 +452,12 @@ export default function PortfolioWorld() {
   const selectNode = useCallback((id: WorldNodeId | null) => {
     selectRef.current(id);
     setSelectedId(id);
+  }, []);
+
+  // Dissolve il velo di nuvole dell'intro mentre la camera scende tra le isole.
+  useEffect(() => {
+    const timer = window.setTimeout(() => setIntroDone(true), 5200);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -354,9 +497,11 @@ export default function PortfolioWorld() {
     );
     const startsMobile = mount.clientWidth <= 680;
     camera.fov = startsMobile ? 50 : 42;
-    camera.position.copy(
-      startsMobile ? MOBILE_OVERVIEW_CAMERA : OVERVIEW_CAMERA,
-    );
+    // La camera parte immersa nelle nuvole, più in alto, e scende tra le isole.
+    const introStart = (startsMobile ? MOBILE_OVERVIEW_CAMERA : OVERVIEW_CAMERA)
+      .clone()
+      .add(new THREE.Vector3(0, startsMobile ? 270 : 205, 55));
+    camera.position.copy(introStart);
     camera.updateProjectionMatrix();
 
     renderer.setSize(mount.clientWidth, mount.clientHeight);
@@ -481,6 +626,7 @@ export default function PortfolioWorld() {
     };
     const centralGlow = createIslandGlow(CENTRAL_POSITION, 0xffc079, 96);
     const cazzeggioGlow = createIslandGlow(CAZZEGGIO_POSITION, 0x9edbd2, 62);
+    const coppitoGlow = createIslandGlow(COPPITO_POSITION, 0xffd34d, 78);
 
     const distantSun = new THREE.Sprite(
       new THREE.SpriteMaterial({
@@ -559,6 +705,22 @@ export default function PortfolioWorld() {
     cazzeggioLabel.scale.multiplyScalar(0.82);
     scene.add(cazzeggioLabel);
 
+    const coppitoLabel = createIslandLabel("COPPITO · UNIVAQ", "#e8b800");
+    coppitoLabel.position.set(COPPITO_POSITION.x, 21, COPPITO_POSITION.z);
+    coppitoLabel.scale.multiplyScalar(0.9);
+    scene.add(coppitoLabel);
+
+    // Coriandoli dalle entrate dei tre blocchi (posizioni in coordinate mondo).
+    const coppitoEmitters = COPPITO_ENTRANCES_LOCAL.map((e) =>
+      new THREE.Vector3(
+        COPPITO_POSITION.x + e[0] * COPPITO_SCALE,
+        COPPITO_POSITION.y + e[1] * COPPITO_SCALE,
+        COPPITO_POSITION.z + e[2] * COPPITO_SCALE,
+      ),
+    );
+    const confetti = createConfetti(coppitoEmitters, COPPITO_SCALE);
+    scene.add(confetti.points);
+
     const interactiveMeshes: THREE.Object3D[] = [];
     const loadedIslands: THREE.Object3D[] = [];
     const animationMixers: THREE.AnimationMixer[] = [];
@@ -583,7 +745,12 @@ export default function PortfolioWorld() {
               scale,
               interactiveMeshes,
             );
-            island.name = id === "profile" ? "Lanciano_Central_Hub" : "Cazzeggio_Island";
+            island.name =
+              id === "profile"
+                ? "Lanciano_Central_Hub"
+                : id === "coppito"
+                  ? "Coppito_University"
+                  : "Cazzeggio_Island";
             scene.add(island);
             loadedIslands.push(island);
             if (gltf.animations.length > 0) {
@@ -613,6 +780,12 @@ export default function PortfolioWorld() {
         CAZZEGGIO_POSITION,
         0.52,
       ),
+      loadIsland(
+        "/models/coppito-island.glb",
+        "coppito",
+        COPPITO_POSITION,
+        COPPITO_SCALE,
+      ),
     ])
       .then(() => {
         if (!disposed) setLoaded(true);
@@ -633,7 +806,9 @@ export default function PortfolioWorld() {
     let targetGoal = (
       startsMobile ? MOBILE_OVERVIEW_TARGET : OVERVIEW_TARGET
     ).clone();
-    let cameraTransitioning = false;
+    let cameraTransitioning = true; // volo introduttivo: dalle nuvole alle isole
+    let introFlight = true; // il primo volo è lento e cinematografico
+    controls.enabled = false;
 
     selectRef.current = (id) => {
       const node = WORLD_NODES.find((item) => item.id === id);
@@ -646,6 +821,7 @@ export default function PortfolioWorld() {
         cameraGoal.copy(mobile ? MOBILE_OVERVIEW_CAMERA : OVERVIEW_CAMERA);
         targetGoal.copy(mobile ? MOBILE_OVERVIEW_TARGET : OVERVIEW_TARGET);
       }
+      introFlight = false;
       cameraTransitioning = true;
       controls.enabled = false;
     };
@@ -714,6 +890,8 @@ export default function PortfolioWorld() {
       animationMixers.forEach((mixer) => mixer.update(delta));
       centralLabel.position.y = 29 + Math.sin(elapsed * 0.8) * 0.35;
       cazzeggioLabel.position.y = 26 + Math.sin(elapsed * 0.8 + 1.2) * 0.3;
+      coppitoLabel.position.y = 21 + Math.sin(elapsed * 0.8 + 2.1) * 0.32;
+      confetti.update(delta, elapsed);
       motes.rotation.y = elapsed * 0.003;
       cloudSea.position.x = Math.sin(elapsed * 0.055) * 2.4;
       cloudSea.position.z = Math.cos(elapsed * 0.04) * 1.8;
@@ -723,16 +901,21 @@ export default function PortfolioWorld() {
       centralGlow.material.opacity = 0.18 + Math.sin(elapsed * 0.7) * 0.035;
       cazzeggioGlow.material.opacity =
         0.17 + Math.sin(elapsed * 0.76 + 1.4) * 0.035;
+      coppitoGlow.material.opacity =
+        0.17 + Math.sin(elapsed * 0.72 + 2.6) * 0.035;
       distantSun.material.opacity = 0.66 + Math.sin(elapsed * 0.28) * 0.05;
 
       if (cameraTransitioning) {
-        camera.position.lerp(cameraGoal, 0.055);
-        controls.target.lerp(targetGoal, 0.07);
+        const posLerp = introFlight ? 0.016 : 0.055;
+        const targetLerp = introFlight ? 0.02 : 0.07;
+        camera.position.lerp(cameraGoal, posLerp);
+        controls.target.lerp(targetGoal, targetLerp);
         if (
-          camera.position.distanceTo(cameraGoal) < 0.2 &&
-          controls.target.distanceTo(targetGoal) < 0.12
+          camera.position.distanceTo(cameraGoal) < 0.3 &&
+          controls.target.distanceTo(targetGoal) < 0.18
         ) {
           cameraTransitioning = false;
+          introFlight = false;
           controls.enabled = true;
         }
       }
@@ -778,6 +961,7 @@ export default function PortfolioWorld() {
         }
       });
       loadedIslands.length = 0;
+      confetti.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
@@ -789,19 +973,12 @@ export default function PortfolioWorld() {
       <div className="archipelago-aurora archipelago-aurora--aqua" />
       <div ref={mountRef} className="archipelago-canvas" aria-hidden="true" />
 
-      <header className="brand">
-        <button
-          className="brand-mark"
-          onClick={() => selectNode(null)}
-          aria-label={copy.overviewLabel}
-        >
-          R
-        </button>
-        <div>
-          <p>{copy.brand}</p>
-          <small>{copy.brandMeta}</small>
-        </div>
-      </header>
+      <div
+        className={`intro-veil ${introDone ? "intro-veil--done" : ""}`}
+        aria-hidden={introDone}
+      >
+        <p className="intro-veil-text">{copy.welcome}</p>
+      </div>
 
       <div
         className="language-switcher"
@@ -822,21 +999,6 @@ export default function PortfolioWorld() {
           </button>
         ))}
       </div>
-
-      <section
-        className={`archipelago-intro ${
-          selected ? "archipelago-intro--hidden" : ""
-        }`}
-        aria-hidden={Boolean(selected)}
-      >
-        <p className="archipelago-kicker">{copy.kicker}</p>
-        <h1>
-          {copy.headlineStart}
-          <br />
-          <em>{copy.headlineAccent}</em>
-        </h1>
-        <p>{copy.intro}</p>
-      </section>
 
       <aside
         className={`node-card ${selected ? "node-card--open" : ""} ${
@@ -905,7 +1067,7 @@ export default function PortfolioWorld() {
             aria-label={node.copy[language].title}
           >
             <span style={{ "--pin-color": node.accent } as React.CSSProperties} />
-            <strong>{node.id === "profile" ? "Lanciano" : "Cazzeggio"}</strong>
+            <strong>{node.shortName}</strong>
             <small>{node.index}</small>
           </button>
         ))}
