@@ -100,18 +100,18 @@ const WORLD_NODES: WorldNode[] = [
         eyebrow: "Prima destinazione · Casual gaming",
         title: "Cazzeggio",
         description:
-          "L’isola dedicata al tempo perso bene: giochi leggeri, esperimenti e nessuna fretta di concludere qualcosa.",
-        detail:
           "È la prima isola affiancata a Lanciano. In futuro altre destinazioni troveranno posto nello stesso arcipelago.",
+        detail:
+          "Questa isola è dedicata a Cazzeggio, il mio sito di casual gaming dedicato ai nullafacenti. Se hai voglia di perdere un po' di tempo e non sai come fare, prova a dargli un'occhiata dal link qui sotto o su cazzeggia.online",
         action: "Visita Cazzeggio",
       },
       en: {
         eyebrow: "First destination · Casual gaming",
         title: "Cazzeggio",
         description:
-          "The island devoted to time well wasted: casual games, experiments, and no pressure to get anything done.",
-        detail:
           "It is the first island beside Lanciano. More destinations will join the same archipelago in the future.",
+        detail:
+          "This island is dedicated to Cazzeggio, my casual gaming site dedicated to slackers. If you want to waste some time and don't know how, try taking a look from the link below or on cazzeggia.online",
         action: "Visit Cazzeggio",
       },
     },
@@ -150,20 +150,20 @@ const UI_COPY = {
   it: {
     brand: "ROBERTO RINGOLI",
     brandMeta: "Arcipelago digitale · Hub centrale",
-    overviewLabel: "Torna alla vista dell’arcipelago",
+    overviewLabel: "Torna alla vista dell'arcipelago",
     languageSelector: "Seleziona la lingua",
     kicker: "Un portfolio fatto di luoghi",
     headlineStart: "Il mio",
     headlineAccent: "arcipelago digitale.",
     intro:
-      "Lanciano è il punto centrale: clicca sull’isola per aprire il mio profilo oppure scegli Cazzeggio, subito accanto.",
+      "Lanciano è il punto centrale: clicca sull'isola per aprire il mio profilo oppure scegli Cazzeggio, subito accanto.",
     mapLabel: "Isole disponibili",
     explore: "Destinazioni",
-    hint: "Trascina · zooma · scegli un’isola",
+    hint: "Trascina · zooma · scegli un'isola",
     loading: "Sto preparando le isole",
     welcome: "Benvenuto nel mio portfolio",
     closeCard: "Chiudi la scheda",
-    errorTitle: "L’arcipelago non riesce a partire",
+    errorTitle: "L'arcipelago non riesce a partire",
     errorBody: "I modelli 3D non sono riusciti a caricarsi in questo browser.",
   },
   en: {
@@ -407,6 +407,330 @@ function createConfetti(
   };
 
   return { points, update, dispose };
+}
+
+// Navicella low-poly (muso verso -Z, così lookAt la orienta nella direzione di volo).
+function createSpaceship(): THREE.Group {
+  const g = new THREE.Group();
+  const hull = new THREE.MeshStandardMaterial({
+    color: 0xdfe4ee,
+    metalness: 0.5,
+    roughness: 0.4,
+  });
+  const accent = new THREE.MeshStandardMaterial({
+    color: 0xd23b3b,
+    metalness: 0.3,
+    roughness: 0.5,
+  });
+  const glass = new THREE.MeshStandardMaterial({
+    color: 0x2c6a92,
+    emissive: 0x14405e,
+    emissiveIntensity: 0.6,
+    metalness: 0.2,
+    roughness: 0.2,
+  });
+  const engineMat = new THREE.MeshStandardMaterial({
+    color: 0x3a3d44,
+    metalness: 0.7,
+    roughness: 0.5,
+  });
+  const glowMat = new THREE.MeshStandardMaterial({
+    color: 0x8fe0ff,
+    emissive: 0x66ccff,
+    emissiveIntensity: 3.2,
+    roughness: 0.3,
+  });
+
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 2.2, 14), hull);
+  body.rotation.x = Math.PI / 2;
+  g.add(body);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.1, 14), hull);
+  nose.rotation.x = -Math.PI / 2;
+  nose.position.z = -1.65;
+  g.add(nose);
+  const stripe = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.515, 0.515, 0.28, 14),
+    accent,
+  );
+  stripe.rotation.x = Math.PI / 2;
+  stripe.position.z = -0.5;
+  g.add(stripe);
+  const dome = new THREE.Mesh(
+    new THREE.SphereGeometry(0.4, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2),
+    glass,
+  );
+  dome.scale.set(1.1, 0.7, 0.95);
+  dome.position.set(0, 0.38, -0.5);
+  g.add(dome);
+  for (const s of [1, -1]) {
+    const wing = new THREE.Mesh(new THREE.BoxGeometry(1.35, 0.09, 1.5), hull);
+    wing.position.set(s * 0.95, -0.12, 0.35);
+    wing.rotation.y = -s * 0.38;
+    g.add(wing);
+    const tip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.26, 0.5), accent);
+    tip.position.set(s * 1.55, -0.05, 0.68);
+    g.add(tip);
+  }
+  const fin = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.55, 0.7), hull);
+  fin.position.set(0, 0.32, 0.9);
+  g.add(fin);
+  for (const s of [1, -1]) {
+    const eng = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.24, 0.9, 10),
+      engineMat,
+    );
+    eng.rotation.x = Math.PI / 2;
+    eng.position.set(s * 0.5, -0.18, 1.15);
+    g.add(eng);
+    const glow = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.15, 0.15, 0.08, 10),
+      glowMat,
+    );
+    glow.rotation.x = Math.PI / 2;
+    glow.position.set(s * 0.5, -0.18, 1.6);
+    g.add(glow);
+  }
+  return g;
+}
+
+type FleetSystem = {
+  update: (delta: number, elapsed: number) => void;
+  dispose: () => void;
+};
+
+// Flotta che scorrazza sopra le isole: quando una nave esce dai bordi riparte da un altro punto.
+function createFleet(scene: THREE.Scene, count: number): FleetSystem {
+  const BOUND = 155;
+  const FORWARD = new THREE.Vector3(0, 0, -1); // muso della navicella
+  type Ship = {
+    group: THREE.Group;
+    dir: THREE.Vector3;
+    speed: number;
+    roll: number;
+  };
+  const ships: Ship[] = [];
+
+  const resetShip = (ship: Ship, prime: boolean) => {
+    const a = Math.random() * Math.PI * 2;
+    const start = new THREE.Vector3(
+      Math.cos(a) * BOUND,
+      26 + Math.random() * 36,
+      Math.sin(a) * BOUND,
+    );
+    const a2 = a + Math.PI + (Math.random() - 0.5) * 1.1;
+    const endY = 26 + Math.random() * 36;
+    const dir = new THREE.Vector3(Math.cos(a2) * BOUND, endY, Math.sin(a2) * BOUND)
+      .sub(start)
+      .normalize();
+    ship.dir = dir;
+    ship.speed = 12 + Math.random() * 13;
+    ship.roll = (Math.random() - 0.5) * 0.45;
+    if (prime) start.addScaledVector(dir, Math.random() * BOUND * 1.7);
+    ship.group.position.copy(start);
+    ship.group.quaternion.setFromUnitVectors(FORWARD, dir);
+    ship.group.rotateZ(ship.roll);
+  };
+
+  for (let i = 0; i < count; i += 1) {
+    const group = createSpaceship();
+    group.scale.setScalar(1.083);
+    scene.add(group);
+    const ship: Ship = {
+      group,
+      dir: new THREE.Vector3(),
+      speed: 0,
+      roll: 0,
+    };
+    resetShip(ship, true);
+    ships.push(ship);
+  }
+
+  // --- EASTER EGG: ogni tanto una nave spara un laser; se colpisce un'altra, esplode ---
+  const LASERS = 4;
+  const laserGeo = new THREE.CylinderGeometry(0.35, 0.35, 1, 6);
+  laserGeo.translate(0, 0.5, 0); // base all'origine, si estende lungo +Y
+  const YAXIS = new THREE.Vector3(0, 1, 0);
+  const lasers: { mesh: THREE.Mesh; life: number }[] = [];
+  for (let i = 0; i < LASERS; i += 1) {
+    const mesh = new THREE.Mesh(
+      laserGeo,
+      new THREE.MeshBasicMaterial({
+        color: 0xff4b3b,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    mesh.visible = false;
+    mesh.frustumCulled = false;
+    scene.add(mesh);
+    lasers.push({ mesh, life: 0 });
+  }
+  const fireLaser = (from: THREE.Vector3, to: THREE.Vector3) => {
+    const l = lasers.find((x) => x.life <= 0) ?? lasers[0];
+    const d = to.clone().sub(from);
+    const len = d.length();
+    if (len < 0.001) return;
+    d.multiplyScalar(1 / len);
+    l.mesh.position.copy(from);
+    l.mesh.quaternion.setFromUnitVectors(YAXIS, d);
+    l.mesh.scale.set(1, len, 1);
+    l.mesh.visible = true;
+    l.life = 0.16;
+  };
+
+  // particelle di esplosione (additive, colori di fuoco)
+  const EX = 320;
+  const exPos = new Float32Array(EX * 3);
+  const exCol = new Float32Array(EX * 3);
+  const exBase = new Float32Array(EX * 3);
+  const exVel = new Float32Array(EX * 3);
+  const exLife = new Float32Array(EX);
+  const exMax = new Float32Array(EX);
+  const exGeo = new THREE.BufferGeometry();
+  exGeo.setAttribute("position", new THREE.BufferAttribute(exPos, 3));
+  exGeo.setAttribute("color", new THREE.BufferAttribute(exCol, 3));
+  const explosions = new THREE.Points(
+    exGeo,
+    new THREE.PointsMaterial({
+      size: 2.6,
+      vertexColors: true,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      sizeAttenuation: true,
+    }),
+  );
+  explosions.frustumCulled = false;
+  scene.add(explosions);
+  const exPosAttr = exGeo.getAttribute("position") as THREE.BufferAttribute;
+  const exColAttr = exGeo.getAttribute("color") as THREE.BufferAttribute;
+  const FIRE = [
+    [1.0, 0.85, 0.4],
+    [1.0, 0.55, 0.18],
+    [1.0, 0.32, 0.12],
+    [1.0, 0.95, 0.7],
+  ];
+  let exCursor = 0;
+  const explode = (c: THREE.Vector3) => {
+    for (let k = 0; k < 72; k += 1) {
+      const i = exCursor;
+      exCursor = (exCursor + 1) % EX;
+      exPos[i * 3] = c.x;
+      exPos[i * 3 + 1] = c.y;
+      exPos[i * 3 + 2] = c.z;
+      const sp = 9 + Math.random() * 28;
+      const th = Math.random() * Math.PI * 2;
+      const ph = Math.acos(2 * Math.random() - 1);
+      exVel[i * 3] = Math.sin(ph) * Math.cos(th) * sp;
+      exVel[i * 3 + 1] = Math.cos(ph) * sp;
+      exVel[i * 3 + 2] = Math.sin(ph) * Math.sin(th) * sp;
+      exMax[i] = exLife[i] = 0.5 + Math.random() * 0.55;
+      const col = FIRE[(Math.random() * FIRE.length) | 0];
+      exBase[i * 3] = col[0];
+      exBase[i * 3 + 1] = col[1];
+      exBase[i * 3 + 2] = col[2];
+    }
+  };
+
+  let fireCooldown = 30 + Math.random() * 8; // primo colpo dopo un po'
+  const rel = new THREE.Vector3();
+  const muzzle = new THREE.Vector3();
+  const findTarget = (shooter: Ship) => {
+    let best: Ship | null = null;
+    let bestAlong = Infinity;
+    for (const t of ships) {
+      if (t === shooter) continue;
+      rel.copy(t.group.position).sub(shooter.group.position);
+      const along = rel.dot(shooter.dir);
+      if (along < 14 || along > 260) continue;
+      const perp = Math.sqrt(Math.max(rel.lengthSq() - along * along, 0));
+      if (perp < 10 && along < bestAlong) {
+        best = t;
+        bestAlong = along;
+      }
+    }
+    return best;
+  };
+
+  const update = (delta: number, elapsed: number) => {
+    const dt = Math.min(delta, 0.05);
+    for (const ship of ships) {
+      ship.group.position.addScaledVector(ship.dir, ship.speed * dt);
+      ship.group.position.y += Math.sin(elapsed * 1.3 + ship.roll * 9) * 0.02;
+      if (
+        ship.group.position.length() > BOUND * 1.02 &&
+        ship.dir.dot(ship.group.position) > 0
+      ) {
+        resetShip(ship, false);
+      }
+    }
+
+    fireCooldown -= dt;
+    if (fireCooldown <= 0) {
+      fireCooldown = 30 + Math.random() * 8;
+      const order = ships.slice().sort(() => Math.random() - 0.5);
+      for (const shooter of order) {
+        const target = findTarget(shooter);
+        if (target) {
+          muzzle
+            .copy(FORWARD)
+            .applyQuaternion(shooter.group.quaternion)
+            .multiplyScalar(3.2 * shooter.group.scale.x)
+            .add(shooter.group.position);
+          fireLaser(muzzle.clone(), target.group.position.clone());
+          explode(target.group.position.clone());
+          resetShip(target, false); // colpita: esplode e riparte da un altro punto
+          break;
+        }
+      }
+    }
+
+    for (const l of lasers) {
+      if (l.life > 0) {
+        l.life -= dt;
+        (l.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(
+          l.life / 0.16,
+          0,
+        );
+        if (l.life <= 0) l.mesh.visible = false;
+      }
+    }
+
+    for (let i = 0; i < EX; i += 1) {
+      if (exLife[i] <= 0) {
+        exCol[i * 3] = exCol[i * 3 + 1] = exCol[i * 3 + 2] = 0;
+        exPos[i * 3] = 0;
+        exPos[i * 3 + 1] = -9999;
+        exPos[i * 3 + 2] = 0;
+        continue;
+      }
+      exLife[i] -= dt;
+      exPos[i * 3] += exVel[i * 3] * dt;
+      exPos[i * 3 + 1] += exVel[i * 3 + 1] * dt;
+      exPos[i * 3 + 2] += exVel[i * 3 + 2] * dt;
+      const f = Math.max(exLife[i], 0) / exMax[i];
+      exCol[i * 3] = exBase[i * 3] * f;
+      exCol[i * 3 + 1] = exBase[i * 3 + 1] * f;
+      exCol[i * 3 + 2] = exBase[i * 3 + 2] * f;
+    }
+    exPosAttr.needsUpdate = true;
+    exColAttr.needsUpdate = true;
+  };
+
+  const dispose = () => {
+    ships.forEach((s) => scene.remove(s.group));
+    lasers.forEach((l) => {
+      scene.remove(l.mesh);
+      (l.mesh.material as THREE.Material).dispose();
+    });
+    laserGeo.dispose();
+    scene.remove(explosions);
+    exGeo.dispose();
+    (explosions.material as THREE.Material).dispose();
+  };
+
+  return { update, dispose };
 }
 
 function prepareIsland(
@@ -665,6 +989,8 @@ export default function PortfolioWorld() {
     const birds = createBirdFlock();
     scene.add(birds);
 
+    const fleet = createFleet(scene, 8);
+
     const motesGeometry = new THREE.BufferGeometry();
     const motePositions: number[] = [];
     for (let i = 0; i < 260; i += 1) {
@@ -898,6 +1224,7 @@ export default function PortfolioWorld() {
       sunRays.position.x = Math.sin(elapsed * 0.11) * 1.2;
       birds.position.x = Math.sin(elapsed * 0.09) * 3.2;
       birds.position.y = Math.sin(elapsed * 0.35) * 0.7;
+      fleet.update(delta, elapsed);
       centralGlow.material.opacity = 0.18 + Math.sin(elapsed * 0.7) * 0.035;
       cazzeggioGlow.material.opacity =
         0.17 + Math.sin(elapsed * 0.76 + 1.4) * 0.035;
@@ -962,6 +1289,7 @@ export default function PortfolioWorld() {
       });
       loadedIslands.length = 0;
       confetti.dispose();
+      fleet.dispose();
       renderer.dispose();
       renderer.domElement.remove();
     };
