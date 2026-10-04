@@ -8,6 +8,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { PARTS, type Lang, type RouteId } from "../content";
 import { buildPC, createRig, type PickId, type Rig } from "./buildPC";
 import { buildDesk, MONITOR_POS } from "./buildDesk";
+import { loadPC, type PCModel } from "./loadPC";
 import { ScreenTexture } from "./ScreenTexture";
 
 export type WorldCallbacks = {
@@ -42,10 +43,10 @@ const VIEWS = {
 
 /** Da che lato la camera si avvicina a ogni componente prima di entrarci. */
 const APPROACH: Record<RouteId, THREE.Vector3> = {
-  cpu: new THREE.Vector3(-1, -0.12, 0.45).normalize(),
+  cpu: new THREE.Vector3(-1, 0.15, -0.35).normalize(),
   ram: new THREE.Vector3(-1, 0.12, 0.55).normalize(),
   gpu: new THREE.Vector3(-1, -0.15, 0.3).normalize(),
-  ssd: new THREE.Vector3(-1, 0, 0.35).normalize(),
+  ssd: new THREE.Vector3(-1, 0.1, -0.3).normalize(),
   psu: new THREE.Vector3(-1, 0.18, 0.4).normalize(),
   os: new THREE.Vector3(0, 0, 1),
 };
@@ -111,9 +112,12 @@ export class PCWorld {
   private reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   private viewScale = 1;
   private baseFov = 40;
-  private glassOpacity: number;
+  private pcGroup: THREE.Group;
+  /** LED che seguono l'accensione (display della pompa, debug, rete). */
+  private powerLights: { material: THREE.MeshStandardMaterial; base: number }[] = [];
   /** Solo per i test: accelera il tempo della simulazione. */
   timeScale = 1;
+  private disposed = false;
 
   constructor(
     private mount: HTMLElement,
@@ -140,12 +144,14 @@ export class PCWorld {
 
     /* -------------------------- oggetti -------------------------- */
     this.rig = createRig();
-    const { pc, caseLight, ledMat, glass } = buildPC(this.rig);
+    // PC procedurale: si vede subito, poi viene sostituito dal modello Blender
+    const { pc, caseLight, ledMat } = buildPC(this.rig);
     pc.position.copy(CASE_POS);
     this.scene.add(pc);
+    this.pcGroup = pc;
+    pc.visible = false; // compare solo se il modello Blender non si carica
     this.caseLight = caseLight;
     this.ledMat = ledMat;
-    this.glassOpacity = (glass.material as THREE.MeshPhysicalMaterial).opacity;
 
     const { room, screen, lampHead } = buildDesk(this.rig, this.screen.texture);
     this.scene.add(room);
@@ -191,6 +197,15 @@ export class PCWorld {
     this.controls.maxPolarAngle = 1.45;
 
     this.collectHighlightMaterials();
+    const base = import.meta.env.BASE_URL;
+    loadPC(`${base}models/pc-parts.glb`, `${base}draco/`)
+      .then((model) => {
+        if (!this.disposed) this.useModel(model);
+      })
+      .catch((error) => {
+        console.warn("Modello Blender non caricato, uso il PC procedurale.", error);
+        this.pcGroup.visible = true;
+      });
     this.resize();
 
     // ingresso: la camera arriva dall'alto e si posa sulla scrivania
@@ -305,6 +320,7 @@ export class PCWorld {
   }
 
   dispose() {
+    this.disposed = true;
     window.cancelAnimationFrame(this.frame);
     window.clearTimeout(this.bootTimer);
     this.resizeObserver.disconnect();
@@ -403,20 +419,82 @@ export class PCWorld {
       this.applyExplode();
     }
     const center = box.getCenter(new THREE.Vector3());
-    const size = box.getSize(new THREE.Vector3()).length();
+    const extent = box.getSize(new THREE.Vector3());
+    const size = extent.length();
     const dir = APPROACH[id];
     const far = id === "os" ? 6.4 * Math.max(1, this.viewScale * 0.8) : 2.6 + size * 0.6;
+    // la camera si ferma appena fuori dalla superficie del pezzo (non dentro i componenti grandi)
+    let surface = Infinity;
+    for (const axis of ["x", "y", "z"] as const) {
+      if (Math.abs(dir[axis]) > 1e-3) surface = Math.min(surface, extent[axis] / 2 / Math.abs(dir[axis]));
+    }
     return {
       center,
       approach: center.clone().addScaledVector(dir, far),
-      inside: center.clone().addScaledVector(dir, id === "os" ? 0.4 : 0.22),
+      inside: center.clone().addScaledVector(dir, id === "os" ? 0.4 : surface + 0.15),
     };
+  }
+
+  /* ============================== modello Blender ============================== */
+
+  /** Sostituisce il PC procedurale con quello modellato in Blender, mantenendo lo stato. */
+  private useModel(model: PCModel) {
+    const old = this.pcGroup;
+    this.caseLight.removeFromParent();
+    const removed = new Set<THREE.Object3D>();
+    const materials = new Set<THREE.Material>();
+    old.traverse((object) => {
+      removed.add(object);
+      const mesh = object as THREE.Mesh;
+      if (mesh.isMesh) (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach((m) => materials.add(m));
+    });
+    const prune = <T,>(items: T[], keep: (item: T) => boolean) => {
+      let w = 0;
+      for (const item of items) if (keep(item)) items[w++] = item;
+      items.length = w;
+    };
+    prune(this.rig.pickables, (o) => !removed.has(o));
+    prune(this.rig.fans, (f) => !removed.has(f.rotor));
+    prune(this.rig.rgb, (l) => !materials.has(l.material));
+    this.rig.explodables.length = 0;
+    for (const key of ["cpu", "ram", "gpu", "ssd", "psu", "power"] as PickId[]) delete this.rig.partRoots[key];
+    this.scene.remove(old);
+    old.traverse((object) => {
+      const mesh = object as THREE.Mesh;
+      if (mesh.isMesh) mesh.geometry.dispose();
+    });
+    materials.forEach((material) => {
+      Object.values(material).forEach((value) => {
+        if (value instanceof THREE.Texture) value.dispose();
+      });
+      material.dispose();
+    });
+
+    model.group.position.copy(CASE_POS);
+    this.scene.add(model.group);
+    this.pcGroup = model.group;
+    this.rig.pickables.push(...model.pickables);
+    this.rig.fans.push(...model.fans);
+    this.rig.rgb.push(...model.rgb);
+    this.rig.explodables.push(...model.explodables);
+    Object.assign(this.rig.partRoots, model.partRoots);
+    this.powerLights = model.powerLights;
+    if (model.powerLed) this.ledMat = model.powerLed;
+    // luce colorata dentro il case, al centro della zona della scheda madre
+    this.caseLight.position.set(0.2, 2.9, -0.4);
+    this.caseLight.distance = 4.5;
+    model.group.add(this.caseLight);
+    this.applyExplode();
+    this.collectHighlightMaterials();
   }
 
   /* ============================== interazione ============================== */
 
   private collectHighlightMaterials() {
-    const rgbSet = new Set(this.rig.rgb.map((r) => r.material));
+    this.highlightMats.clear();
+    this.highlightLevel.clear();
+    // le luci animate dal loop non devono essere toccate dall'evidenziazione
+    const rgbSet = new Set<THREE.Material>([...this.rig.rgb.map((r) => r.material), ...this.powerLights.map((l) => l.material), this.ledMat]);
     for (const object of this.rig.pickables) {
       const pick = object.userData.pick as PickId;
       const mesh = object as THREE.Mesh;
@@ -522,7 +600,7 @@ export class PCWorld {
         part.homeRot.z + part.rot.z * e,
       );
       if (part.fade) {
-        part.fade.opacity = this.glassOpacity * (1 - e);
+        for (const f of part.fade) f.material.opacity = f.base * (1 - e);
         part.object.visible = e < 0.98;
       }
     }
@@ -548,7 +626,7 @@ export class PCWorld {
     // accensione
     const target = this.powered ? 1 : 0;
     this.power += (target - this.power) * Math.min(1, dt * (this.powered ? 1.6 : 4));
-    for (const fan of this.rig.fans) fan.rotor.rotation.z += fan.speed * this.power * dt;
+    for (const fan of this.rig.fans) fan.rotor.rotation[fan.axis] += fan.speed * this.power * dt;
     for (const light of this.rig.rgb) {
       light.material.emissive.setHSL((light.hue + time * 0.05) % 1, 1, 0.55);
       light.material.emissiveIntensity = light.base * this.power;
@@ -557,6 +635,7 @@ export class PCWorld {
     this.caseLight.color.setHSL((0.6 + time * 0.05) % 1, 0.8, 0.6);
     this.ledMat.emissiveIntensity = this.powered ? 3 : 0.5 + (Math.sin(time * 3.2) * 0.5 + 0.5) * 2.2;
     this.ledMat.emissive.set(this.powered ? 0x8fd3ff : 0xffffff);
+    for (const light of this.powerLights) light.material.emissiveIntensity = light.base * this.power;
 
     this.screen.update(time);
     const screenOn = this.powered && this.screen.current !== "off" ? 1 : 0;

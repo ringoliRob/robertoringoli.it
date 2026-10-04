@@ -12,8 +12,11 @@ export type Explodable = {
   offset: THREE.Vector3;
   rot: THREE.Euler;
   delay: number;
-  fade?: THREE.Material & { opacity: number };
+  /** Materiali che svaniscono mentre il pezzo si smonta (vetro, cavi), con la loro opacità di base. */
+  fade?: { material: THREE.Material; base: number }[];
 };
+
+export type Fan = { rotor: THREE.Object3D; speed: number; axis: "y" | "z" };
 
 export type RgbLight = { material: THREE.MeshStandardMaterial; hue: number; base: number };
 
@@ -21,7 +24,7 @@ export type Rig = {
   pickables: THREE.Object3D[];
   partRoots: Partial<Record<PickId, THREE.Object3D>>;
   explodables: Explodable[];
-  fans: { rotor: THREE.Object3D; speed: number }[];
+  fans: Fan[];
   rgb: RgbLight[];
 };
 
@@ -137,7 +140,7 @@ function createFan(rig: Rig, size: number, hue: number, speed = 9) {
     rotor.add(pivot);
   }
   group.add(rotor);
-  rig.fans.push({ rotor, speed });
+  rig.fans.push({ rotor, speed, axis: "z" });
   return group;
 }
 
@@ -458,7 +461,7 @@ export function buildPC(rig: Rig) {
   glass.position.set(-W / 2 + 0.02, H / 2, 0);
   glass.renderOrder = 5;
   glass.userData.noRaycast = true;
-  explodable(rig, glass, [-2.0, 0.2, 0.3], 0, [0, -0.35, 0], glassMat);
+  explodable(rig, glass, [-2.0, 0.2, 0.3], 0, [0, -0.35, 0], [{ material: glassMat, base: glassMat.opacity }]);
   pc.add(glass);
 
   const caseLight = new THREE.PointLight(0x88aaff, 0, 3.6, 2);

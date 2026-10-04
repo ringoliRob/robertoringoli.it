@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "portfolio_blender": {
+      "command": "node",
+      "args": ["tools/blender-mcp/server.mjs"],
+      "env": {
+        "BLENDER_MCP_HOST": "127.0.0.1",
+        "BLENDER_MCP_PORT": "9876",
+        "BLENDER_MCP_TOKEN": "blender-local"
+      }
+    }
+  }
+}
