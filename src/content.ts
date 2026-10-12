@@ -354,6 +354,7 @@ export const OS = {
     exams: { it: "Esami", en: "Exams" },
     snake: { it: "Snake", en: "Snake" },
     projects: { it: "Progetti", en: "Projects" },
+    contacts: { it: "Contatti", en: "Contacts" },
     cazzeggio: { it: "Cazzeggio", en: "Cazzeggio" },
   },
   github: { it: "GitHub", en: "GitHub" },

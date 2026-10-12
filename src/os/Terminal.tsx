@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { CPU, EXAMS, PART_IDS, PARTS, PROJECTS, RAM, type Lang, type PartId } from "../content";
+import { CPU, EXAMS, PROJECTS, RAM, type Lang } from "../content";
+import type { AppId } from "./RingoliOS";
 
 type Line = { kind: "in" | "out" | "err" | "accent"; text: string };
 
 type Props = {
   lang: Lang;
   setLang: (lang: Lang) => void;
-  openApp: (app: "snake" | "about" | "exams" | "projects") => void;
-  openPart: (id: PartId) => void;
+  openApp: (app: AppId) => void;
   onExit: () => void;
   onShutdown: () => void;
 };
@@ -22,7 +22,7 @@ const T = {
       "whoami            chi c'è dietro questo PC",
       "ls                elenca i file",
       "cat <file>        legge un file",
-      "open <parte>      entra in un componente (cpu, ram, gpu, ssd, psu)",
+      "open <app>        apre un'app (chi_sono, esami, progetti, contatti, snake)",
       "snake             avvia il benchmark della GPU",
       "cazzeggio         apre cazzeggia.online",
       "neofetch          informazioni di sistema",
@@ -33,7 +33,7 @@ const T = {
       "whoami            who's behind this PC",
       "ls                list files",
       "cat <file>        read a file",
-      "open <part>       dive into a component (cpu, ram, gpu, ssd, psu)",
+      "open <app>        open an app (about, exams, projects, contacts, snake)",
       "snake             run the GPU benchmark",
       "cazzeggio         open cazzeggia.online",
       "neofetch          system information",
@@ -48,12 +48,12 @@ const T = {
   notFound: { it: "comando non trovato", en: "command not found" },
   noFile: { it: "file inesistente", en: "no such file" },
   sudo: { it: "Permesso negato. Bel tentativo però.", en: "Permission denied. Nice try though." },
-  openUsage: { it: "uso: open <cpu|ram|gpu|ssd|psu>", en: "usage: open <cpu|ram|gpu|ssd|psu>" },
+  openUsage: { it: "uso: open <chi_sono|esami|progetti|contatti|snake>", en: "usage: open <about|exams|projects|contacts|snake>" },
 };
 
 const FILES = (lang: Lang) => [lang === "it" ? "chi_sono.txt" : "about_me.txt", "esami.db", "progetti/", "snake.exe", "cazzeggio.url"];
 
-export default function Terminal({ lang, setLang, openApp, openPart, onExit, onShutdown }: Props) {
+export default function Terminal({ lang, setLang, openApp, onExit, onShutdown }: Props) {
   const [lines, setLines] = useState<Line[]>([{ kind: "accent", text: T.motd[lang] }]);
   const [input, setInput] = useState("");
   const history = useRef<string[]>([]);
@@ -106,12 +106,27 @@ export default function Terminal({ lang, setLang, openApp, openPart, onExit, onS
           PROJECTS.forEach((p) => say(`${p.file.padEnd(28)} ${p.status[lang]}`));
         } else say(`cd: ${arg || "?"}: ${T.noFile[lang]}`, "err");
         break;
-      case "open":
-        if ((PART_IDS as string[]).includes(arg)) {
-          say(`→ ${PARTS[arg as PartId].chip} · ${PARTS[arg as PartId].section[lang]}`, "accent");
-          window.setTimeout(() => openPart(arg as PartId), 350);
+      case "open": {
+        const apps: Record<string, AppId> = {
+          chi_sono: "about",
+          about: "about",
+          esami: "exams",
+          exams: "exams",
+          progetti: "projects",
+          projects: "projects",
+          contatti: "contacts",
+          contacts: "contacts",
+          snake: "snake",
+          terminale: "terminal",
+          terminal: "terminal",
+        };
+        const app = apps[arg.replace(/\.(txt|db|exe)$/, "")];
+        if (app) {
+          say(`→ ${arg}`, "accent");
+          openApp(app);
         } else say(T.openUsage[lang], "err");
         break;
+      }
       case "snake":
       case "snake.exe":
       case "./snake.exe":

@@ -3,27 +3,14 @@ import DsGame from "./components/DsGame";
 import { Crosshair, OakDialog, StartScreen } from "./components/GameHud";
 import { Hotbar, StatusBars } from "./components/Survival";
 import TouchControls from "./components/TouchControls";
-import { GAME, PARTS, ROUTE_IDS, UI, type Lang, type PartId, type RouteId } from "./content";
+import { GAME, PARTS, ROUTE_IDS, UI, type Lang, type RouteId } from "./content";
 import { RoomWorld, SLOTS, type ItemId, type Slot } from "./game/RoomWorld";
 import RingoliOS from "./os/RingoliOS";
-import CpuPage from "./pages/CpuPage";
-import GpuPage from "./pages/GpuPage";
-import PageShell from "./pages/PageShell";
-import PsuPage from "./pages/PsuPage";
-import RamPage from "./pages/RamPage";
-import SsdPage from "./pages/SsdPage";
-
-const PAGES: Record<PartId, (props: { lang: Lang }) => React.ReactNode> = {
-  cpu: CpuPage,
-  ram: RamPage,
-  gpu: GpuPage,
-  ssd: SsdPage,
-  psu: PsuPage,
-};
 
 function parseHash(): RouteId | null {
   const id = window.location.hash.replace(/^#\/?/, "");
-  return (ROUTE_IDS as string[]).includes(id) ? (id as RouteId) : null;
+  // tutto vive nel computer: anche i vecchi link alle sezioni (#/cpu, #/ram…) aprono RingoliOS
+  return (ROUTE_IDS as string[]).includes(id) ? "os" : null;
 }
 
 function initialLang(): Lang {
@@ -215,15 +202,6 @@ export default function App() {
         : "Roberto Ringoli — The room";
   }, [route, lang]);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      // dalle sezioni Esc riporta al desktop di RingoliOS
-      if (event.key === "Escape" && routeRef.current && routeRef.current !== "os") navigate("os");
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [navigate]);
-
   const start = () => {
     if (touch) setStarted(true);
     else worldRef.current?.requestLock();
@@ -291,17 +269,6 @@ export default function App() {
 
       {dsOpen && <DsGame lang={lang} cleared={dsCleared} onWin={winDs} onClose={closeDs} />}
 
-      {route && route !== "os" && (
-        <div key={route} className="route-fade">
-          <PageShell id={route} lang={lang} setLang={setLang} onBack={() => navigate("os")} onNavigate={(id) => navigate(id)}>
-            {(() => {
-              const Page = PAGES[route];
-              return <Page lang={lang} />;
-            })()}
-          </PageShell>
-        </div>
-      )}
-
       {route === "os" && (
         <div className="route-fade">
           <RingoliOS
@@ -312,7 +279,6 @@ export default function App() {
               worldRef.current?.setPowered(false);
               navigate(null);
             }}
-            onOpenPart={(id) => navigate(id)}
           />
         </div>
       )}

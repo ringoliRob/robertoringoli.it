@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Snake from "../components/Snake";
-import { CPU, EXAMS, OS, PARTS, PROJECTS, RAM, type Lang, type PartId } from "../content";
+import { CPU, EXAMS, OS, PARTS, PROJECTS, PSU, RAM, type Lang } from "../content";
 import { GITHUB_PROFILE, LANGUAGE_COLORS, useGithubRepos, type Repo } from "./github";
 import Terminal from "./Terminal";
 
-type AppId = "terminal" | "about" | "exams" | "snake" | "projects";
+export type AppId = "terminal" | "about" | "exams" | "snake" | "projects" | "contacts";
 type Win = { app: AppId; x: number; y: number; z: number };
 
 type Props = {
@@ -12,7 +12,6 @@ type Props = {
   setLang: (lang: Lang) => void;
   onExit: () => void;
   onShutdown: () => void;
-  onOpenPart: (id: PartId) => void;
 };
 
 const ICONS: { app: AppId | "cazzeggio"; glyph: string; color: string }[] = [
@@ -21,6 +20,7 @@ const ICONS: { app: AppId | "cazzeggio"; glyph: string; color: string }[] = [
   { app: "exams", glyph: "0x", color: PARTS.ram.accent },
   { app: "snake", glyph: "▚", color: PARTS.gpu.accent },
   { app: "projects", glyph: "▤", color: PARTS.ssd.accent },
+  { app: "contacts", glyph: "@", color: PARTS.psu.accent },
   { app: "cazzeggio", glyph: "CZ", color: "#63ead8" },
 ];
 
@@ -30,6 +30,7 @@ const SIZES: Record<AppId, { w: number; h: number }> = {
   exams: { w: 560, h: 460 },
   snake: { w: 420, h: 560 },
   projects: { w: 560, h: 420 },
+  contacts: { w: 420, h: 300 },
 };
 
 function FolderIcon({ color }: { color: string }) {
@@ -78,7 +79,7 @@ function Clock({ lang }: { lang: Lang }) {
   );
 }
 
-export default function RingoliOS({ lang, setLang, onExit, onShutdown, onOpenPart }: Props) {
+export default function RingoliOS({ lang, setLang, onExit, onShutdown }: Props) {
   // su telefono le finestre sono a schermo intero: si parte dal desktop con le icone
   const [wins, setWins] = useState<Win[]>(() =>
     window.innerWidth < 720 ? [] : [{ app: "terminal", x: 0, y: 0, z: 1 }],
@@ -176,7 +177,6 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown, onOpenPar
             lang={lang}
             setLang={setLang}
             openApp={open}
-            openPart={onOpenPart}
             onExit={onExit}
             onShutdown={onShutdown}
           />
@@ -192,9 +192,6 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown, onOpenPar
               </p>
             ))}
             <p>{CPU.bio[lang]}</p>
-            <button type="button" className="os-link" onClick={() => onOpenPart("cpu")}>
-              {PARTS.cpu.chip} · {PARTS.cpu.section[lang]} →
-            </button>
           </div>
         );
       case "exams":
@@ -224,9 +221,6 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown, onOpenPar
                 </tr>
               </tbody>
             </table>
-            <button type="button" className="os-link" onClick={() => onOpenPart("ram")}>
-              {PARTS.ram.chip} · {PARTS.ram.section[lang]} →
-            </button>
           </div>
         );
       case "snake":
@@ -271,9 +265,19 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown, onOpenPar
                 )}
               </div>
             ))}
-            <button type="button" className="os-link" onClick={() => onOpenPart("ssd")}>
-              {PARTS.ssd.chip} · {PARTS.ssd.section[lang]} →
-            </button>
+          </div>
+        );
+      case "contacts":
+        return (
+          <div className="os-doc">
+            {PSU.connectors.map((c) => (
+              <div key={c.label} className="os-project">
+                <code>{c.label}</code>
+                <a href={c.url} target="_blank" rel="noreferrer">
+                  {c.value} ↗
+                </a>
+              </div>
+            ))}
           </div>
         );
     }
