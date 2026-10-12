@@ -337,8 +337,14 @@ export const PSU = {
   ],
   connectorsTitle: { it: "Connettori · contatti", en: "Connectors · contacts" },
   connectors: [
-    { label: "GitHub", value: "github.com/ringoliRob", url: "https://github.com/ringoliRob" },
-    { label: "Cazzeggio", value: "cazzeggia.online", url: "https://cazzeggia.online" },
+    { label: { it: "Contattami", en: "Get in touch" }, value: "info@robertoringoli.it", url: "mailto:info@robertoringoli.it" },
+    {
+      label: { it: "Mail accademica", en: "Academic email" },
+      value: "roberto.ringoli@student.univaq.it",
+      url: "mailto:roberto.ringoli@student.univaq.it",
+    },
+    { label: { it: "Cazzeggio", en: "Cazzeggio" }, value: "roberto.ringoli@cazzeggia.online", url: "mailto:roberto.ringoli@cazzeggia.online" },
+    { label: { it: "GitHub", en: "GitHub" }, value: "github.com/ringoliRob", url: "https://github.com/ringoliRob" },
   ],
 };
 

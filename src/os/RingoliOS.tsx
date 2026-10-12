@@ -30,7 +30,7 @@ const SIZES: Record<AppId, { w: number; h: number }> = {
   exams: { w: 560, h: 460 },
   snake: { w: 420, h: 560 },
   projects: { w: 560, h: 420 },
-  contacts: { w: 420, h: 300 },
+  contacts: { w: 440, h: 380 },
 };
 
 function FolderIcon({ color }: { color: string }) {
@@ -271,10 +271,10 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown }: Props) 
         return (
           <div className="os-doc">
             {PSU.connectors.map((c) => (
-              <div key={c.label} className="os-project">
-                <code>{c.label}</code>
-                <a href={c.url} target="_blank" rel="noreferrer">
-                  {c.value} ↗
+              <div key={c.value} className="os-project">
+                <code>{c.label[lang]}</code>
+                <a href={c.url} target={c.url.startsWith("mailto:") ? undefined : "_blank"} rel="noreferrer">
+                  {c.value} {c.url.startsWith("mailto:") ? "✉" : "↗"}
                 </a>
               </div>
             ))}

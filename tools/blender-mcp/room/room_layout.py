@@ -53,7 +53,8 @@ TV_STAND = (X0 + 0.1, X0 + 4.1, TV_Y - 8.0, TV_Y + 8.0, 4.6)  # x0, x1, y0, y1, 
 
 # libreria nell'angolo nord-ovest, armadio nell'angolo sud-ovest
 SHELF = (X0 + 0.05, X0 + 3.95, Y1 - 11.0, Y1 - 0.1, 18.0)  # x0, x1, y0, y1, altezza
-WARDROBE = (X0 + 0.05, X0 + 15.05, Y0 + 0.05, Y0 + 6.05, 21.5)  # x0, x1, y0, y1, altezza
+# lungo la parete sud ma staccato dal mobile TV (che sporge 40 cm dalla parete ovest)
+WARDROBE = (X0 + 5.0, X0 + 20.0, Y0 + 0.05, Y0 + 6.05, 21.5)  # x0, x1, y0, y1, altezza
 
 PLAYER_SPAWN = ((DOOR_X[0] + DOOR_X[1]) / 2, Y0 + 4.0)
 EYE_HEIGHT = 16.5
