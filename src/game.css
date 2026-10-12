@@ -731,3 +731,59 @@ kbd {
   display: block;
   width: fit-content;
 }
+
+/* il nome dell'oggetto sta sopra cuori e cosce, non sopra la hotbar */
+.hotbar-label {
+  position: absolute;
+  bottom: calc(100% + 30px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+@media (hover: none) {
+  /* su touch ci sono i pulsanti: i tasti F/G non servono */
+  .hotbar-label small {
+    display: none;
+  }
+}
+
+/* telefono in orizzontale: le due metà del 3DS affiancate, schermi più grandi */
+@media (orientation: landscape) and (max-height: 520px) {
+  .ds-overlay {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .ds {
+    width: min(100%, 980px, calc((100dvh - 64px) * 2.4));
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .ds-hinge {
+    display: none;
+  }
+
+  .ds-lid,
+  .ds-base {
+    border-radius: 18px;
+    padding: 3% 3%;
+  }
+
+  .ds-help,
+  .ds-keys {
+    display: none;
+  }
+
+  .ds-screen--bottom {
+    gap: 12%;
+    font-size: clamp(9px, 1.6vh, 12px);
+  }
+
+  .ds-close {
+    padding: 6px 14px;
+    font-size: 13px;
+  }
+}
