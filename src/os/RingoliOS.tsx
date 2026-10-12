@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Snake from "../components/Snake";
 import { CPU, EXAMS, OS, PARTS, PROJECTS, RAM, type Lang, type PartId } from "../content";
+import { GITHUB_PROFILE, LANGUAGE_COLORS, useGithubRepos, type Repo } from "./github";
 import Terminal from "./Terminal";
 
 type AppId = "terminal" | "about" | "exams" | "snake" | "projects";
@@ -31,6 +32,39 @@ const SIZES: Record<AppId, { w: number; h: number }> = {
   projects: { w: 560, h: 420 },
 };
 
+function FolderIcon({ color }: { color: string }) {
+  return (
+    <svg viewBox="0 0 48 40" width="48" height="40" aria-hidden="true">
+      <path d="M2 8a4 4 0 0 1 4-4h12l5 5h19a4 4 0 0 1 4 4v21a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z" fill={color} opacity="0.85" />
+      <path d="M2 14h44v20a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z" fill={color} />
+      <path d="M17 22l-4 4 4 4M31 22l4 4-4 4M26 20l-4 12" stroke="#0b0b12" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity="0.7" />
+    </svg>
+  );
+}
+
+function repoDate(iso: string, lang: Lang) {
+  return new Date(iso).toLocaleDateString(lang === "it" ? "it-IT" : "en-GB", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function RepoMeta({ repo, lang }: { repo: Repo; lang: Lang }) {
+  return (
+    <p className="os-repo-meta">
+      {repo.language && (
+        <span>
+          <i style={{ background: LANGUAGE_COLORS[repo.language] ?? "#8b8b8b" }} />
+          {repo.language}
+        </span>
+      )}
+      <span>
+        ★ {repo.stars} {OS.stars[lang]}
+      </span>
+      <span>
+        {OS.updated[lang]} {repoDate(repo.pushedAt, lang)}
+      </span>
+    </p>
+  );
+}
+
 function Clock({ lang }: { lang: Lang }) {
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
@@ -52,6 +86,7 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown, onOpenPar
   const [menu, setMenu] = useState(false);
   const zTop = useRef(1);
   const deskRef = useRef<HTMLDivElement>(null);
+  const github = useGithubRepos();
 
   // centra la prima finestra rispetto al desktop
   useEffect(() => {
@@ -203,6 +238,28 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown, onOpenPar
       case "projects":
         return (
           <div className="os-doc">
+            <h2>{OS.github[lang]}</h2>
+            {github.status === "loading" && <p className="os-muted">{OS.githubLoading[lang]}</p>}
+            {github.status === "error" && <p className="os-muted">{OS.githubError[lang]}</p>}
+            {github.repos.map((repo) => (
+              <div key={repo.name} className="os-project">
+                <code>{repo.name}/</code>
+                {repo.description && <p>{repo.description}</p>}
+                <RepoMeta repo={repo} lang={lang} />
+                <a href={repo.url} target="_blank" rel="noreferrer">
+                  {repo.url.replace("https://", "")} ↗
+                </a>
+                {repo.homepage && (
+                  <a href={repo.homepage} target="_blank" rel="noreferrer">
+                    {repo.homepage.replace(/^https?:\/\//, "")} ↗
+                  </a>
+                )}
+              </div>
+            ))}
+            <a className="os-link" href={GITHUB_PROFILE} target="_blank" rel="noreferrer">
+              {OS.githubProfile[lang]} ↗
+            </a>
+            <h2>{OS.otherProjects[lang]}</h2>
             {PROJECTS.map((p) => (
               <div key={p.file} className="os-project">
                 <code>{p.file}</code>
@@ -238,6 +295,24 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown, onOpenPar
             </li>
           ))}
         </ul>
+
+        {github.repos.length > 0 && (
+          <section className="os-repos" aria-label={OS.githubHint[lang]}>
+            <p>
+              <span aria-hidden="true">⌥</span> {OS.github[lang]}
+            </p>
+            <ul>
+              {github.repos.map((repo) => (
+                <li key={repo.name}>
+                  <a href={repo.url} target="_blank" rel="noreferrer" title={repo.description ?? repo.name}>
+                    <FolderIcon color={LANGUAGE_COLORS[repo.language ?? ""] ?? "#8b7bff"} />
+                    <span>{repo.name}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {wins.map((win) => (
           <section

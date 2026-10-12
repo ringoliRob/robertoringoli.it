@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import DiveOverlay, { type DiveOverlayHandle } from "./components/DiveOverlay";
-import LangSwitch from "./components/LangSwitch";
-import { PART_IDS, PARTS, ROUTE_IDS, UI, type Lang, type PartId, type RouteId } from "./content";
+import DsGame from "./components/DsGame";
+import { Crosshair, OakDialog, StartScreen } from "./components/GameHud";
+import { Hotbar, StatusBars } from "./components/Survival";
+import TouchControls from "./components/TouchControls";
+import { GAME, PARTS, ROUTE_IDS, UI, type Lang, type PartId, type RouteId } from "./content";
+import { RoomWorld, SLOTS, type ItemId, type Slot } from "./game/RoomWorld";
 import RingoliOS from "./os/RingoliOS";
 import CpuPage from "./pages/CpuPage";
 import GpuPage from "./pages/GpuPage";
@@ -9,8 +12,6 @@ import PageShell from "./pages/PageShell";
 import PsuPage from "./pages/PsuPage";
 import RamPage from "./pages/RamPage";
 import SsdPage from "./pages/SsdPage";
-import type { PickId } from "./scene/buildPC";
-import { PCWorld } from "./scene/PCWorld";
 
 const PAGES: Record<PartId, (props: { lang: Lang }) => React.ReactNode> = {
   cpu: CpuPage,
@@ -39,65 +40,66 @@ const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() 
 
 export default function App() {
   const mountRef = useRef<HTMLDivElement>(null);
-  const worldRef = useRef<PCWorld | null>(null);
-  const overlayRef = useRef<DiveOverlayHandle>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
+  const worldRef = useRef<RoomWorld | null>(null);
   const routeRef = useRef<RouteId | null>(parseHash());
   const busy = useRef(false);
 
   const [lang, setLang] = useState<Lang>(initialLang);
   const [route, setRoute] = useState<RouteId | null>(routeRef.current);
-  const [powered, setPowered] = useState(false);
-  const [exploded, setExploded] = useState(false);
-  const [hovered, setHovered] = useState<PickId | null>(null);
+  const [world, setWorld] = useState<RoomWorld | null>(null);
+  const [loaded, setLoaded] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [started, setStarted] = useState(false);
+  /** Perché il mouse è stato liberato: pausa voluta (Esc) o il sito stesso (pagina, 3DS). */
+  const [unlockReason, setUnlockReason] = useState<"user" | "app">("user");
+  const expectUnlock = useRef(false);
+  const [prompt, setPrompt] = useState<string | null>(null);
+  const [slots, setSlots] = useState<Slot[]>(() => Array(SLOTS).fill(null));
+  const [selected, setSelected] = useState(0);
+  const [icons, setIcons] = useState<Partial<Record<ItemId, string>>>({});
+  const held = slots[selected]?.id ?? null;
   const [toast, setToast] = useState<string | null>(null);
+  const [dialog, setDialog] = useState(false);
+  const [dsOpen, setDsOpen] = useState(false);
+  const [dsCleared, setDsCleared] = useState(false);
   const [noWebgl, setNoWebgl] = useState(false);
   const [diving, setDiving] = useState(false);
   const [touch] = useState(() => window.matchMedia("(hover: none)").matches);
 
   /* ------------------------------ transizioni ------------------------------ */
 
+  /** Dalla stanza: zoom sul monitor (il PC si accende da solo), poi RingoliOS in dissolvenza. */
   const openRoute = async (id: RouteId) => {
-    const world = worldRef.current;
-    const part = PARTS[id];
-    setDiving(true);
-    if (world) {
-      if (id === "os" && !world.isPowered()) {
-        world.setPowered(true);
-        setPowered(true);
-      }
-      world.setPaused(false);
-      await world.dive(id);
+    const w = worldRef.current;
+    if (w) {
+      if (!w.isPowered()) w.setPowered(true);
+      w.setPaused(false);
+      expectUnlock.current = true;
+      setDiving(true);
+      await w.zoomToMonitor();
+      setDiving(false);
     }
-    await overlayRef.current?.enter(part.accent, part.bg);
-    setDiving(false);
     routeRef.current = id;
     setRoute(id);
     await nextFrame();
-    world?.setPaused(true);
-    await overlayRef.current?.reveal();
+    w?.setPaused(true);
   };
 
+  /** Tra desktop e sezioni si cambia sul posto. */
   const swapRoute = async (id: RouteId) => {
-    const part = PARTS[id];
-    await overlayRef.current?.enter(part.accent, part.bg);
     routeRef.current = id;
     setRoute(id);
-    await nextFrame();
-    await overlayRef.current?.reveal();
   };
 
-  const closeRoute = async (from: RouteId) => {
-    const world = worldRef.current;
-    const part = PARTS[from];
-    const done = overlayRef.current?.exit(part.accent, part.bg);
+  /** Uscendo dal computer la camera si stacca dallo schermo e torna nella stanza. */
+  const closeRoute = async () => {
+    const w = worldRef.current;
     routeRef.current = null;
     setRoute(null);
-    if (world) {
-      world.setPaused(false);
-      world.undive(from);
+    if (w) {
+      w.setPaused(false);
+      w.zoomOut();
     }
-    await done;
   };
 
   const sync = useCallback(async () => {
@@ -108,12 +110,11 @@ export default function App() {
     busy.current = true;
     try {
       if (want && !have) await openRoute(want);
-      else if (!want && have) await closeRoute(have);
+      else if (!want && have) await closeRoute();
       else if (want && have) await swapRoute(want);
     } finally {
       busy.current = false;
     }
-    // l'utente potrebbe aver navigato di nuovo durante l'animazione
     if (parseHash() !== routeRef.current) void sync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -121,6 +122,8 @@ export default function App() {
   const navigate = useCallback(
     (id: RouteId | null) => {
       if (busy.current) return;
+      // tornando nella stanza il mouse si ricattura subito, dentro lo stesso clic
+      if (!id && routeRef.current) worldRef.current?.requestLock();
       const url = id ? `#/${id}` : window.location.pathname + window.location.search;
       window.history.pushState(null, "", url);
       void sync();
@@ -138,53 +141,61 @@ export default function App() {
     };
   }, [sync]);
 
-  /* ------------------------------ scena 3D ------------------------------ */
+  /* ------------------------------ stanza 3D ------------------------------ */
 
   const showToast = useCallback((text: string) => {
     setToast(text);
-    window.setTimeout(() => setToast((current) => (current === text ? null : current)), 3200);
+    window.setTimeout(() => setToast((current) => (current === text ? null : current)), 3600);
   }, []);
 
-  const handlePick = useRef<(pick: PickId) => void>(() => {});
-  handlePick.current = (pick) => {
-    const world = worldRef.current;
-    if (!world || busy.current) return;
-    if (pick === "power") {
-      const next = !world.isPowered();
-      world.setPowered(next);
-      setPowered(next);
-    } else if (pick === "shell") {
-      world.setExploded(true);
-    } else if (pick === "monitor") {
-      if (world.isPowered()) navigate("os");
-      else showToast(UI.needPower[lang]);
-    } else {
-      navigate(pick);
-    }
-  };
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
-    let world: PCWorld;
+    let w: RoomWorld;
     try {
-      world = new PCWorld(mount, {
-        onHover: setHovered,
-        onPick: (pick) => handlePick.current(pick),
-        onExplodedChange: setExploded,
+      w = new RoomWorld(mount, {
+        onPrompt: setPrompt,
+        onInventory: (next, index) => {
+          setSlots(next);
+          setSelected(index);
+        },
+        onIcons: setIcons,
+        onToast: showToast,
+        onDialog: () => {
+          w.setBlocked(true);
+          setDialog(true);
+        },
+        onPlayDs: () => {
+          expectUnlock.current = true;
+          w.setBlocked(true, true);
+          setDsOpen(true);
+        },
+        onNavigate: (id) => navigateRef.current(id),
+        onLock: (isLocked) => {
+          setLocked(isLocked);
+          if (isLocked) setStarted(true);
+          else setUnlockReason(expectUnlock.current ? "app" : "user");
+          expectUnlock.current = false;
+        },
+        onLoaded: () => setLoaded(true),
+        onPower: () => {},
       });
     } catch {
       setNoWebgl(true);
       return;
     }
-    worldRef.current = world;
-    if (import.meta.env.DEV) (window as unknown as { __world: PCWorld }).__world = world;
-    if (routeRef.current) world.setPaused(true);
+    worldRef.current = w;
+    setWorld(w);
+    if (import.meta.env.DEV) (window as unknown as { __world: RoomWorld }).__world = w;
+    if (routeRef.current) w.setPaused(true);
     return () => {
-      world.dispose();
+      w.dispose();
       worldRef.current = null;
     };
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     worldRef.current?.setLang(lang);
@@ -200,159 +211,111 @@ export default function App() {
     document.title = route
       ? `${PARTS[route].section[lang]} — Roberto Ringoli`
       : lang === "it"
-        ? "Roberto Ringoli — Il PC"
-        : "Roberto Ringoli — The PC";
+        ? "Roberto Ringoli — La stanza"
+        : "Roberto Ringoli — The room";
   }, [route, lang]);
-
-  // il tooltip segue il puntatore senza passare da React
-  useEffect(() => {
-    const onMove = (event: PointerEvent) => {
-      const el = tooltipRef.current;
-      if (el) el.style.transform = `translate(${event.clientX + 18}px, ${event.clientY + 16}px)`;
-    };
-    window.addEventListener("pointermove", onMove);
-    return () => window.removeEventListener("pointermove", onMove);
-  }, []);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && routeRef.current && routeRef.current !== "os") navigate(null);
+      // dalle sezioni Esc riporta al desktop di RingoliOS
+      if (event.key === "Escape" && routeRef.current && routeRef.current !== "os") navigate("os");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [navigate]);
 
-  /* ------------------------------ comandi HUD ------------------------------ */
-
-  const togglePower = () => {
-    const world = worldRef.current;
-    if (!world) return;
-    const next = !powered;
-    world.setPowered(next);
-    setPowered(next);
+  const start = () => {
+    if (touch) setStarted(true);
+    else worldRef.current?.requestLock();
   };
 
-  const toggleExplode = () => worldRef.current?.setExploded(!exploded);
+  const closeDialog = useCallback(() => {
+    setDialog(false);
+    worldRef.current?.setBlocked(false);
+  }, []);
 
-  const tooltip = (() => {
-    if (!hovered || touch) return null;
-    if (hovered === "shell") return { title: UI.shell[lang], sub: null, color: "#ffffff" };
-    if (hovered === "power") return { title: UI.powerButton[lang], sub: powered ? UI.powerOff[lang] : UI.powerOn[lang], color: "#8fd3ff" };
-    if (hovered === "monitor")
-      return { title: powered ? UI.monitorOn[lang] : UI.monitorOff[lang], sub: null, color: PARTS.os.accent };
-    const part = PARTS[hovered];
-    return { title: `${part.chip} · ${part.section[lang]}`, sub: UI.enter[lang], color: part.accent };
-  })();
+  const closeDs = useCallback(() => {
+    setDsOpen(false);
+    worldRef.current?.setBlocked(false);
+    worldRef.current?.requestLock();
+  }, []);
 
-  const hoveredRoute: RouteId | null =
-    hovered && hovered in PARTS ? (hovered as RouteId) : hovered === "monitor" ? "os" : null;
+  const winDs = useCallback(() => {
+    setDsCleared(true);
+    worldRef.current?.rewardKey();
+  }, []);
+
+  const playing = (touch ? started : locked) && !route && !diving && !dsOpen;
+  const away = !route && !diving && !dsOpen && !dialog && !(touch ? started : locked);
+  const showStart = away && (!started || unlockReason === "user");
+  const showResume = away && started && unlockReason === "app";
+  // vita, fame e hotbar restano visibili anche in pausa
+  const showSurvival = started && !route && !diving && !dsOpen;
 
   return (
     <div className={`app ${route || diving ? "app--page" : ""}`}>
       <div ref={mountRef} className="scene" aria-hidden="true" />
 
       <div className="hud" aria-hidden={route ? true : undefined} inert={route ? true : undefined}>
-        <header className="hud-top">
-          <div className="brand">
-            <p className="brand-name">Roberto Ringoli</p>
-            <p className="brand-meta">{UI.brandMeta[lang]}</p>
-          </div>
-          <LangSwitch lang={lang} setLang={setLang} />
-        </header>
-
-        <nav className="hud-index" aria-label={UI.index[lang]}>
-          <p>{UI.index[lang]}</p>
-          {[...PART_IDS, "os" as const].map((id) => (
-            <button
-              key={id}
-              type="button"
-              className={hoveredRoute === id ? "hover" : ""}
-              style={{ "--chip": PARTS[id].accent } as React.CSSProperties}
-              onClick={() => navigate(id)}
-            >
-              <span className="chip">{PARTS[id].chip}</span>
-              <span className="label">
-                {PARTS[id].section[lang]}
-                <small>{PARTS[id].name[lang]}</small>
-              </span>
-            </button>
-          ))}
-        </nav>
-
-        <div className="hud-bottom">
-          <p className="hud-hint">{touch ? UI.hintTouch[lang] : UI.hint[lang]}</p>
-          <div className="controls">
-            <button
-              type="button"
-              className={`ctrl ctrl--power ${powered ? "on" : "off"}`}
-              onClick={togglePower}
-              aria-pressed={powered}
-            >
-              <span aria-hidden="true">⏻</span>
-              {powered ? UI.powerOff[lang] : UI.powerOn[lang]}
-            </button>
-            <button type="button" className="ctrl" onClick={toggleExplode} aria-pressed={exploded}>
-              <span aria-hidden="true">{exploded ? "⧉" : "⇱"}</span>
-              {exploded ? UI.assemble[lang] : UI.explode[lang]}
-            </button>
-            <button type="button" className="ctrl" onClick={() => worldRef.current?.resetView()}>
-              <span aria-hidden="true">⟲</span>
-              {UI.resetView[lang]}
-            </button>
-          </div>
-        </div>
-
-        {toast && (
+        {playing && <Crosshair prompt={dialog ? null : prompt} touch={touch} />}
+        {(playing || showSurvival) && <StatusBars lang={lang} />}
+        {(playing || showSurvival) && <Hotbar slots={slots} selected={selected} icons={icons} lang={lang} onSelect={(i) => worldRef.current?.selectSlot(i)} />}
+        {playing && touch && !dialog && <TouchControls world={world} lang={lang} prompt={prompt} held={held} />}
+        {toast && !route && (
           <p className="toast" role="status">
             {toast}
           </p>
         )}
-
         {noWebgl && <p className="no-webgl">{UI.noWebgl[lang]}</p>}
       </div>
 
-      <div ref={tooltipRef} className={`tooltip ${tooltip ? "visible" : ""}`} aria-hidden="true">
-        {tooltip && (
-          <>
-            <i style={{ background: tooltip.color }} />
-            <span>
-              {tooltip.title}
-              {tooltip.sub && <small>{tooltip.sub}</small>}
-            </span>
-          </>
-        )}
-      </div>
+      {dialog && <OakDialog lang={lang} onClose={closeDialog} />}
 
-      {route && route !== "os" && (
-        <PageShell
-          id={route}
+      {showStart && (
+        <StartScreen
           lang={lang}
           setLang={setLang}
-          onBack={() => navigate(null)}
+          loaded={loaded || noWebgl}
+          resumed={started}
+          touch={touch}
+          onStart={start}
           onNavigate={(id) => navigate(id)}
-        >
-          {(() => {
-            const Page = PAGES[route];
-            return <Page lang={lang} />;
-          })()}
-        </PageShell>
-      )}
-
-      {route === "os" && (
-        <RingoliOS
-          lang={lang}
-          setLang={setLang}
-          onExit={() => navigate(null)}
-          onShutdown={() => {
-            worldRef.current?.setPowered(false);
-            setPowered(false);
-            navigate(null);
-          }}
-          onOpenPart={(id) => navigate(id)}
         />
       )}
 
-      <DiveOverlay ref={overlayRef} />
+      {showResume && (
+        <button type="button" className="resume" onClick={start}>
+          {GAME.resume[lang]}
+        </button>
+      )}
+
+      {dsOpen && <DsGame lang={lang} cleared={dsCleared} onWin={winDs} onClose={closeDs} />}
+
+      {route && route !== "os" && (
+        <div key={route} className="route-fade">
+          <PageShell id={route} lang={lang} setLang={setLang} onBack={() => navigate("os")} onNavigate={(id) => navigate(id)}>
+            {(() => {
+              const Page = PAGES[route];
+              return <Page lang={lang} />;
+            })()}
+          </PageShell>
+        </div>
+      )}
+
+      {route === "os" && (
+        <div className="route-fade">
+          <RingoliOS
+            lang={lang}
+            setLang={setLang}
+            onExit={() => navigate(null)}
+            onShutdown={() => {
+              worldRef.current?.setPowered(false);
+              navigate(null);
+            }}
+            onOpenPart={(id) => navigate(id)}
+          />
+        </div>
+      )}
     </div>
   );
 }

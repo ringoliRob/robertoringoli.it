@@ -97,7 +97,7 @@ export const UI = {
     it: "Il monitor è spento: premi il tasto di accensione sul case.",
     en: "The monitor is off: press the power button on the case.",
   },
-  back: { it: "Torna al PC", en: "Back to the PC" },
+  back: { it: "Torna a RingoliOS", en: "Back to RingoliOS" },
   next: { it: "Prossimo componente", en: "Next component" },
   language: { it: "Lingua", en: "Language" },
   noWebgl: {
@@ -356,4 +356,106 @@ export const OS = {
     projects: { it: "Progetti", en: "Projects" },
     cazzeggio: { it: "Cazzeggio", en: "Cazzeggio" },
   },
+  github: { it: "GitHub", en: "GitHub" },
+  githubHint: { it: "Repository pubblici · clic per aprirli su GitHub", en: "Public repositories · click to open on GitHub" },
+  githubLoading: { it: "Carico i repository da GitHub…", en: "Loading repositories from GitHub…" },
+  githubError: { it: "GitHub non risponde: ecco i progetti salvati.", en: "GitHub is not answering: here are the saved projects." },
+  githubProfile: { it: "Tutti i repository su GitHub", en: "All repositories on GitHub" },
+  updated: { it: "aggiornato", en: "updated" },
+  stars: { it: "stelle", en: "stars" },
+  otherProjects: { it: "Altri progetti", en: "Other projects" },
 };
+
+/* ---------------------------------- Stanza (gioco) ---------------------------------- */
+
+export const GAME = {
+  title: { it: "La stanza di Roberto", en: "Roberto's room" },
+  start: { it: "Clicca per entrare", en: "Click to enter" },
+  resume: { it: "Clicca per continuare", en: "Click to continue" },
+  tapStart: { it: "Tocca per entrare", en: "Tap to enter" },
+  intro: {
+    it: "Esplora la mia stanza: ogni oggetto racconta qualcosa. Prendi le cose, usale, lanciale.",
+    en: "Explore my room: every object tells you something. Pick things up, use them, throw them.",
+  },
+  controls: { it: "Comandi", en: "Controls" },
+  keys: [
+    { k: "W A S D", v: { it: "muoviti (Shift per correre)", en: "move (Shift to run)" } },
+    { k: "C", v: { it: "abbassati", en: "crouch" } },
+    { k: "Mouse", v: { it: "guardati intorno", en: "look around" } },
+    { k: "E", v: { it: "prendi / interagisci", en: "pick up / interact" } },
+    { k: "F", v: { it: "usa l'oggetto in mano", en: "use the held item" } },
+    { k: "G", v: { it: "lancia l'oggetto", en: "throw the item" } },
+    { k: "1–9", v: { it: "scegli lo slot (anche con la rotella)", en: "pick a slot (or mouse wheel)" } },
+    { k: "Esc", v: { it: "pausa", en: "pause" } },
+  ],
+  skip: { it: "Preferisci leggere? Vai dritto al computer:", en: "Rather read? Jump straight to the computer:" },
+  toComputer: { it: "Apri RingoliOS", en: "Open RingoliOS" },
+  holding: { it: "In mano", en: "Holding" },
+  use: { it: "usa", en: "use" },
+  throw: { it: "lancia", en: "throw" },
+  loading: { it: "Sto arredando la stanza…", en: "Furnishing the room…" },
+  oakName: { it: "PROF. OAK", en: "PROF. OAK" },
+  oak: {
+    it: "Le parole del Prof. Oak riecheggiano…\nC'è un momento e un luogo per ogni cosa, ma non ora!",
+    en: "OAK's words echoed…\nThere's a time and place for everything, but not now!",
+  },
+  close: { it: "E per chiudere", en: "E to close" },
+  health: { it: "Vita", en: "Health" },
+  hunger: { it: "Fame", en: "Hunger" },
+  hotbar: { it: "Inventario", en: "Inventory" },
+} satisfies Record<string, unknown>;
+
+/** Nomi e azioni degli oggetti della stanza. */
+export const ITEMS = {
+  ds: { name: { it: "Nintendo 3DS XL", en: "Nintendo 3DS XL" }, use: { it: "gioca", en: "play" } },
+  key: { name: { it: "Chiave della cassaforte", en: "Safe key" }, use: { it: "usala sulla cassaforte", en: "use it on the safe" } },
+  lightRemote: { name: { it: "Telecomando della lampadina", en: "Light bulb remote" }, use: { it: "cambia colore", en: "change color" } },
+  tvRemote: { name: { it: "Telecomando della TV", en: "TV remote" }, use: { it: "accendi/spegni la TV", en: "TV on/off" } },
+  pizza: { name: { it: "Fetta di pizza", en: "Pizza slice" }, use: { it: "mangia", en: "eat" } },
+  drink: { name: { it: "Lattina energetica", en: "Energy drink" }, use: { it: "bevi", en: "drink" } },
+} satisfies Record<string, { name: L; use: L }>;
+
+export const PROMPTS = {
+  pick: { it: "Prendi", en: "Pick up" },
+  door: { it: "Esci dalla stanza", en: "Leave the room" },
+  lightOn: { it: "Accendi il lampadario", en: "Turn on the ceiling light" },
+  lightOff: { it: "Spegni il lampadario", en: "Turn off the ceiling light" },
+  ledOn: { it: "Accendi la striscia LED", en: "Turn on the LED strip" },
+  ledOff: { it: "Spegni la striscia LED", en: "Turn off the LED strip" },
+  safeLocked: { it: "Cassaforte chiusa a chiave", en: "Locked safe" },
+  safeUnlock: { it: "Apri la cassaforte con la chiave", en: "Unlock the safe with the key" },
+  safeOpen: { it: "Cassaforte aperta", en: "Open safe" },
+  tv: { it: "TV · serve il telecomando", en: "TV · needs the remote" },
+  monitorOn: { it: "Entra in RingoliOS", en: "Enter RingoliOS" },
+  monitorOff: { it: "Monitor spento · accendi il PC", en: "Monitor off · power on the PC" },
+  powerOn: { it: "Accendi il PC", en: "Power on the PC" },
+  powerOff: { it: "Spegni il PC", en: "Power off the PC" },
+  pizzaBox: { it: "Prendi una fetta di pizza", en: "Take a pizza slice" },
+} satisfies Record<string, L>;
+
+export const TOASTS = {
+  safeLocked: { it: "È chiusa. Forse la chiave è in qualche gioco…", en: "It's locked. Maybe the key is hidden in some game…" },
+  safeOpened: { it: "Clic! La cassaforte si apre.", en: "Click! The safe opens." },
+  keyFound: { it: "Livello completato! Dal 3DS è saltata fuori una chiave.", en: "Course clear! A key popped out of the 3DS." },
+  lampOff: { it: "Il lampadario è spento: accendilo dall'interruttore vicino alla porta.", en: "The ceiling light is off: switch it on by the door." },
+  tvNeedsRemote: { it: "Ti serve il telecomando della TV.", en: "You need the TV remote." },
+  noVideo: { it: "Nessun segnale: manca il video in public/videos/tv.mp4.", en: "No signal: the video is missing from public/videos/tv.mp4." },
+  needPower: { it: "Il monitor è spento: premi il tasto di accensione sul case.", en: "The monitor is off: press the power button on the case." },
+  inventoryFull: { it: "Inventario pieno: lancia qualcosa con G.", en: "Inventory full: throw something with G." },
+  pizzaGone: { it: "La pizza è finita. Qualcuno aveva fame…", en: "The pizza is gone. Someone was hungry…" },
+  ate: { it: "Gnam!", en: "Yum!" },
+  useKeyHere: { it: "Avvicinati alla cassaforte e guardala per usare la chiave.", en: "Walk up to the safe and look at it to use the key." },
+} satisfies Record<string, L>;
+
+export const BULB_COLORS: { name: L; hex: string }[] = [
+  { name: { it: "bianco caldo", en: "warm white" }, hex: "#ffd2a1" },
+  { name: { it: "rosso", en: "red" }, hex: "#ff3b30" },
+  { name: { it: "verde", en: "green" }, hex: "#34c759" },
+  { name: { it: "blu", en: "blue" }, hex: "#2f7bff" },
+  { name: { it: "giallo", en: "yellow" }, hex: "#ffd60a" },
+  { name: { it: "viola", en: "purple" }, hex: "#bf5af2" },
+  { name: { it: "arancione", en: "orange" }, hex: "#ff9f0a" },
+  { name: { it: "azzurro", en: "cyan" }, hex: "#64d2ff" },
+  { name: { it: "rosa", en: "pink" }, hex: "#ff2d92" },
+  { name: { it: "bianco freddo", en: "cool white" }, hex: "#eef4ff" },
+];
