@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import Snake from "../components/Snake";
-import { CPU, EXAMS, OS, PARTS, PROJECTS, PSU, RAM, type Lang } from "../content";
+import { CPU, EXAMS, OS, PARTS, PROJECTS, PSU, RAM, THESIS, openThesis, type Lang } from "../content";
 import { GITHUB_PROFILE, LANGUAGE_COLORS, useGithubRepos, type Repo } from "./github";
 import Terminal from "./Terminal";
 
@@ -14,13 +14,14 @@ type Props = {
   onShutdown: () => void;
 };
 
-const ICONS: { app: AppId | "cazzeggio"; glyph: string; color: string }[] = [
+const ICONS: { app: AppId | "cazzeggio" | "thesis"; glyph: string; color: string }[] = [
   { app: "terminal", glyph: ">_", color: "#2b2f3a" },
   { app: "about", glyph: "RR", color: PARTS.cpu.accent },
   { app: "exams", glyph: "0x", color: PARTS.ram.accent },
   { app: "snake", glyph: "▚", color: PARTS.gpu.accent },
   { app: "projects", glyph: "▤", color: PARTS.ssd.accent },
   { app: "contacts", glyph: "@", color: PARTS.psu.accent },
+  { app: "thesis", glyph: "PDF", color: "#d4af55" },
   { app: "cazzeggio", glyph: "CZ", color: "#63ead8" },
 ];
 
@@ -117,8 +118,12 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown }: Props) 
   }, []);
 
   const open = useCallback(
-    (app: AppId | "cazzeggio") => {
+    (app: AppId | "cazzeggio" | "thesis") => {
       setMenu(false);
+      if (app === "thesis") {
+        openThesis();
+        return;
+      }
       if (app === "cazzeggio") {
         window.open("https://cazzeggia.online", "_blank", "noopener");
         return;
@@ -192,6 +197,9 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown }: Props) 
               </p>
             ))}
             <p>{CPU.bio[lang]}</p>
+            <button type="button" className="os-link" onClick={openThesis}>
+              {THESIS.label[lang]} · {THESIS.grade} ↗
+            </button>
           </div>
         );
       case "exams":
@@ -221,6 +229,13 @@ export default function RingoliOS({ lang, setLang, onExit, onShutdown }: Props) 
                 </tr>
               </tbody>
             </table>
+            <p className="os-thesis">
+              <b>{THESIS.label[lang]} · {THESIS.grade}</b>
+              <span>{THESIS.title}</span>
+            </p>
+            <button type="button" className="os-link" onClick={openThesis}>
+              {THESIS.open[lang]} ↗
+            </button>
           </div>
         );
       case "snake":

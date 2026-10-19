@@ -787,3 +787,19 @@ kbd {
     font-size: 13px;
   }
 }
+
+/* tesi di laurea nella finestra Esami */
+.os-thesis {
+  display: grid;
+  gap: 2px;
+  margin-top: 14px;
+}
+
+.os-thesis b {
+  color: #d4af55;
+}
+
+.os-thesis span {
+  color: var(--muted);
+  font-size: 13px;
+}

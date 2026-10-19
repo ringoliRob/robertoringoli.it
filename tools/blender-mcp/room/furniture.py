@@ -310,10 +310,12 @@ for k in range(len(levels) - 1):
         # una sezione su tre resta mezza vuota per i props
         if k == 0 and half < 0:
             continue  # vano della cassaforte (props.py)
-        fill = 1.0 if (k + (half > 0)) % 3 else 0.55
+        # vano della tesi esposta di copertina (props.py): pochi libri e nessuna pila
+        thesis_bay = k == 4 and half < 0
+        fill = 0.4 if thesis_bay else 1.0 if (k + (half > 0)) % 3 else 0.55
         limit = y + (y_end - y) * fill
         while y < limit - 0.3:
-            if rng.random() < 0.1:
+            if rng.random() < 0.1 and not thesis_bay:
                 # pila orizzontale
                 n = rng.randint(2, 4)
                 w = rng.uniform(2.0, 2.6)

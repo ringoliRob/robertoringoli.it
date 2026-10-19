@@ -112,8 +112,8 @@ export const CPU = {
   kicker: { it: "CPU · Core 0 · Chi sono", en: "CPU · Core 0 · About me" },
   title: "Roberto Ringoli",
   lead: {
-    it: "Studente di Informatica all’Università degli Studi dell’Aquila, nato a San Severo e cresciuto a Lanciano, in Abruzzo.",
-    en: "Computer Science student at the University of L’Aquila, born in San Severo and raised in Lanciano, Abruzzo.",
+    it: "Laureato in Informatica all’Università degli Studi dell’Aquila con 109/110, nato a San Severo e cresciuto a Lanciano, in Abruzzo.",
+    en: "Computer Science graduate (109/110) from the University of L’Aquila, born in San Severo and raised in Lanciano, Abruzzo.",
   },
   specs: [
     { k: { it: "Modello", en: "Model" }, v: { it: "Ringoli Core R-05", en: "Ringoli Core R-05" } },
@@ -122,6 +122,7 @@ export const CPU = {
     { k: { it: "Assemblato a", en: "Assembled in" }, v: { it: "Lanciano, Abruzzo", en: "Lanciano, Abruzzo" } },
     { k: { it: "Firmware", en: "Firmware" }, v: { it: "Liceo scientifico", en: "Scientific high school" } },
     { k: { it: "Set di istruzioni", en: "Instruction set" }, v: { it: "Informatica · AI · 3D", en: "CS · AI · 3D" } },
+    { k: { it: "Laurea", en: "Degree" }, v: { it: "Informatica · 109/110", en: "Computer Science · 109/110" } },
     { k: { it: "Prossimo upgrade", en: "Next upgrade" }, v: { it: "Magistrale AICoNDA", en: "AICoNDA master’s" } },
   ],
   cores: [
@@ -135,8 +136,8 @@ export const CPU = {
     {
       title: { it: "Studi", en: "Studies" },
       body: {
-        it: "Dopo il liceo scientifico, Informatica all’Università dell’Aquila, al polo di Coppito. Sto per laurearmi.",
-        en: "After scientific high school, Computer Science at the University of L’Aquila, Coppito campus. Graduating soon.",
+        it: "Dopo il liceo scientifico, la laurea in Informatica all’Università dell’Aquila, al polo di Coppito, con 109/110 e una tesi sul rilevamento di eventi complessi nella videosorveglianza.",
+        en: "After scientific high school, a Computer Science degree at the University of L’Aquila, Coppito campus, with 109/110 and a thesis on complex event detection in video surveillance.",
       },
     },
     {
@@ -155,8 +156,8 @@ export const CPU = {
     },
   ],
   bio: {
-    it: "Questo portfolio vuole mostrare ciò che so fare e tutto quello che mi viene in mente di realizzare. Ogni componente di questo PC contiene un pezzo di me: smontalo, entra dentro, e se vuoi accendilo. Buon viaggio.",
-    en: "This portfolio is meant to show what I can do and everything I imagine building. Every component of this PC holds a piece of me: take it apart, dive in, and power it on if you like. Enjoy the journey.",
+    it: "Questo portfolio vuole mostrare ciò che so fare e tutto quello che mi viene in mente di realizzare. Ogni angolo di questa stanza contiene un pezzo di me: esplorala, accendi il PC e curiosa sul desktop. Buon viaggio.",
+    en: "This portfolio is meant to show what I can do and everything I imagine building. Every corner of this room holds a piece of me: explore it, power on the PC and look around the desktop. Enjoy the journey.",
   },
 };
 
@@ -187,8 +188,8 @@ export const RAM = {
   kicker: { it: "RAM · DDR-Coppito · Studi", en: "RAM · DDR-Coppito · Studies" },
   title: { it: "Università dell’Aquila", en: "University of L’Aquila" },
   lead: {
-    it: "Il polo di Coppito, dove sto per laurearmi in Informatica all’Università degli Studi dell’Aquila: Blocco 0, Coppito 1 e Coppito 2 affacciati sulla stessa via.",
-    en: "The Coppito campus, where I’m about to graduate in Computer Science at the University of L’Aquila: Blocco 0, Coppito 1 and Coppito 2 along the same street.",
+    it: "Il polo di Coppito, dove mi sono laureato in Informatica all’Università degli Studi dell’Aquila con 109/110: Blocco 0, Coppito 1 e Coppito 2 affacciati sulla stessa via.",
+    en: "The Coppito campus, where I graduated in Computer Science at the University of L’Aquila with 109/110: Blocco 0, Coppito 1 and Coppito 2 along the same street.",
   },
   banks: ["Blocco 0", "Coppito 1", "Coppito 2"],
   mapTitle: { it: "Mappa della memoria · esami superati", en: "Memory map · passed exams" },
@@ -200,8 +201,8 @@ export const RAM = {
   nextTitle: { it: "Prossima allocazione", en: "Next allocation" },
   next: "AICoNDA — Artificial Intelligence, Complex Networks, and Data Analytics",
   nextBody: {
-    it: "Appena conclusa la triennale, punto alla laurea magistrale in AICoNDA.",
-    en: "Right after my bachelor’s, I aim to start the AICoNDA master’s degree.",
+    it: "Conclusa la triennale con 109/110, punto alla laurea magistrale in AICoNDA.",
+    en: "With my bachelor’s done (109/110), I’m aiming for the AICoNDA master’s degree.",
   },
   allocating: { it: "ALLOCAZIONE IN CORSO", en: "ALLOCATING" },
 };
@@ -329,7 +330,7 @@ export const PSU = {
       volt: "+3.3V",
       title: { it: "Abruzzo", en: "Abruzzo" },
       body: {
-        it: "Lanciano è casa, L’Aquila è dove studio. Una tensione bassa ma sempre presente.",
+        it: "Lanciano è casa, L’Aquila è dove mi sono laureato. Una tensione bassa ma sempre presente.",
         en: "Lanciano is home, L’Aquila is where I study. A low voltage, but always on.",
       },
       load: 0.64,
@@ -361,6 +362,7 @@ export const OS = {
     snake: { it: "Snake", en: "Snake" },
     projects: { it: "Progetti", en: "Projects" },
     contacts: { it: "Contatti", en: "Contacts" },
+    thesis: { it: "tesi.pdf", en: "thesis.pdf" },
     cazzeggio: { it: "Cazzeggio", en: "Cazzeggio" },
   },
   github: { it: "GitHub", en: "GitHub" },
@@ -372,6 +374,22 @@ export const OS = {
   stars: { it: "stelle", en: "stars" },
   otherProjects: { it: "Altri progetti", en: "Other projects" },
 };
+
+/* ---------------------------------- Tesi di laurea ---------------------------------- */
+
+/** La tesi triennale, nella libreria della stanza e sul desktop di RingoliOS (PDF in public/docs). */
+export const THESIS = {
+  file: "docs/tesi-roberto-ringoli.pdf",
+  title: "Modellazione e rilevamento di eventi complessi in sistemi di videosorveglianza multimodale",
+  grade: "109/110",
+  label: { it: "Tesi di laurea", en: "Bachelor’s thesis" },
+  open: { it: "Leggi la tesi", en: "Read the thesis" },
+};
+
+/** Apre il PDF della tesi in una nuova scheda (va chiamata dentro un gesto dell’utente). */
+export function openThesis() {
+  window.open(`${import.meta.env.BASE_URL}${THESIS.file}`, "_blank", "noopener");
+}
 
 /* ---------------------------------- Stanza (gioco) ---------------------------------- */
 
@@ -438,6 +456,7 @@ export const PROMPTS = {
   powerOn: { it: "Accendi il PC", en: "Power on the PC" },
   powerOff: { it: "Spegni il PC", en: "Power off the PC" },
   pizzaBox: { it: "Prendi una fetta di pizza", en: "Take a pizza slice" },
+  thesis: { it: "Leggi la mia tesi di laurea (109/110)", en: "Read my bachelor’s thesis (109/110)" },
 } satisfies Record<string, L>;
 
 export const TOASTS = {

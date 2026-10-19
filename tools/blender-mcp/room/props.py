@@ -3,7 +3,7 @@ poster, Nintendo 3DS XL, console + controller, pianta, lampada da comodino.
 
 Radici interattive (Empty): "Monitor" (con "Monitor_Screen", UV 0..1), "DS" (3DS XL aperto, con
 "DS_Top_Screen" / "DS_Bottom_Screen", UV 0..1), "Neon", "Console", "Poster_*", "Bed_Lamp",
-"Safe" (anta "Safe_Door"), e gli oggetti da raccogliere "DS", "Key", "Light_Remote", "TV_Remote".
+"Safe" (anta "Safe_Door"), "Thesis" (la tesi nella libreria), e gli oggetti da raccogliere "DS", "Key", "Light_Remote", "TV_Remote".
 Materiali "RGB_*" animati dal sito.
 """
 
@@ -486,5 +486,38 @@ mesh_object("Key_Shank", cylinder_bm(0.035, 0.5, 12, (0.05, 0, 0), axis="X"), co
 mesh_object("Key_Collar", cylinder_bm(0.055, 0.04, 16, (-0.15, 0, 0), axis="X"), coll, [M["brass"]], key)
 for k, (x, h) in enumerate(((0.18, 0.12), (0.24, 0.07), (0.3, 0.14))):
     box(f"Key_Bit_{k}", (0.05, 0.03, h), (x, 0, -h / 2 - 0.02), coll, M["brass"], key, bevel=0.005, segments=1)
+
+# ------------------------------------------------------------------ tesi di laurea esposta di copertina nella libreria
+# rilegatura rigida blu con scritte in oro; nel vano a sinistra del 5° ripiano, all'altezza degli occhi.
+# Radice "Thesis": il sito la rende un bersaglio che apre il PDF.
+M["thesis_cover"] = material("Prop_Thesis_Cover", srgb("#1f3563"), roughness=0.55)
+M["thesis_pages"] = material("Prop_Thesis_Pages", srgb("#f1ede3"), roughness=0.85)
+# un filo di emissione: dentro la libreria arriva poca luce e le scritte devono leggersi
+M["gold"] = material("Prop_Thesis_Gold", srgb("#d4af55"), metallic=0.8, roughness=0.35, emission=srgb("#d4af55"), strength=0.35)
+shelf_cx, shelf_cy = (sx0 + sx1) / 2, (sy0 + sy1) / 2
+TH_W, TH_H, TH_T = 2.0, 2.9, 0.16  # A4 rilegato, ~70 pagine
+thesis = empty("Thesis", coll, (shelf_cx + 0.4, shelf_cy - 1.13, 14.1 + 0.125), root)
+thesis.rotation_euler = (0, math.radians(-10), 0)  # appoggiata indietro, contro il fondo
+board = 0.03
+box("Thesis_Pages", (TH_T - 2 * board, TH_W - 0.06, TH_H - 0.06), (0, 0, TH_H / 2), coll, M["thesis_pages"], thesis, bevel=0.005, segments=1)
+for side, x in (("Front", TH_T / 2 - board / 2), ("Back", -TH_T / 2 + board / 2)):
+    box(f"Thesis_Cover_{side}", (board, TH_W, TH_H), (x, 0.03, TH_H / 2), coll, M["thesis_cover"], thesis, bevel=0.01, segments=2)
+box("Thesis_Spine", (TH_T, 0.06, TH_H), (0, -TH_W / 2 + 0.03, TH_H / 2), coll, M["thesis_cover"], thesis, bevel=0.015, segments=2)
+# scritte in oro sulla copertina (rivolta verso +X, la stanza)
+FACE = (math.radians(90), 0, math.radians(90))
+fx = TH_T / 2 + 0.003
+lines = [
+    ("UNIVERSITÀ DEGLI STUDI DELL'AQUILA", 0.075, 2.62),
+    ("Corso di Laurea in Informatica", 0.065, 2.48),
+    ("Modellazione e rilevamento", 0.115, 1.98),
+    ("di eventi complessi in sistemi", 0.115, 1.83),
+    ("di videosorveglianza multimodale", 0.115, 1.68),
+    ("Roberto Ringoli", 0.1, 0.95),
+    ("Anno Accademico 2025/2026", 0.065, 0.32),
+]
+for k, (body, size, z) in enumerate(lines):
+    text_object(f"Thesis_Text_{k}", body, coll, M["gold"], size, 0.0, parent=thesis, location=(fx, 0.03, z), rotation=FACE, font=FONT_DIN, resolution=3)
+for k, z in enumerate((2.3, 1.38, 0.5)):
+    box(f"Thesis_Rule_{k}", (0.004, 1.3 if k == 1 else 1.6, 0.012), (fx, 0.03, z), coll, M["gold"], thesis, bevel=0)
 
 _result = {"objects": len(coll.objects)}

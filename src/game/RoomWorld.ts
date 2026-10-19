@@ -32,6 +32,7 @@ export type RoomCallbacks = {
   onIcons: (icons: Partial<Record<ItemId, string>>) => void;
   onToast: (text: string) => void;
   onDialog: () => void;
+  onOpenThesis: () => void;
   onPlayDs: () => void;
   onNavigate: (route: RouteId) => void;
   onLock: (locked: boolean) => void;
@@ -41,7 +42,7 @@ export type RoomCallbacks = {
 
 type Target =
   | { kind: "item"; item: ItemId }
-  | { kind: "door" | "switch" | "switchLed" | "safe" | "tv" | "monitor" | "pizzaBox" }
+  | { kind: "door" | "switch" | "switchLed" | "safe" | "tv" | "monitor" | "pizzaBox" | "thesis" }
   | { kind: "power" };
 
 type Item = {
@@ -552,6 +553,7 @@ export class RoomWorld {
 
     const fixed: [string, Target][] = [
       ["Pizza_Box", { kind: "pizzaBox" }],
+      ["Thesis", { kind: "thesis" }],
       ["Door", { kind: "door" }],
       ["Light_Switch", { kind: "switch" }],
       ["Light_Switch_LED", { kind: "switchLed" }],
@@ -809,6 +811,8 @@ export class RoomWorld {
         return t("tv");
       case "pizzaBox":
         return t("pizzaBox");
+      case "thesis":
+        return t("thesis");
       case "monitor":
         return this.powered ? t("monitorOn") : t("monitorOff");
       case "power":
@@ -828,6 +832,9 @@ export class RoomWorld {
       }
       case "pizzaBox":
         this.takeSlice();
+        break;
+      case "thesis":
+        this.cb.onOpenThesis();
         break;
       case "door":
         this.cb.onDialog();

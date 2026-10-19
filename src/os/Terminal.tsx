@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CPU, EXAMS, PROJECTS, RAM, type Lang } from "../content";
+import { CPU, EXAMS, PROJECTS, RAM, THESIS, openThesis, type Lang } from "../content";
 import type { AppId } from "./RingoliOS";
 
 type Line = { kind: "in" | "out" | "err" | "accent"; text: string };
@@ -42,8 +42,8 @@ const T = {
     ],
   },
   whoami: {
-    it: "roberto — studente di Informatica @ Università dell'Aquila · Lanciano, Abruzzo",
-    en: "roberto — Computer Science student @ University of L'Aquila · Lanciano, Abruzzo",
+    it: "roberto — laureato in Informatica (109/110) @ Università dell'Aquila · Lanciano, Abruzzo",
+    en: "roberto — Computer Science graduate (109/110) @ University of L'Aquila · Lanciano, Abruzzo",
   },
   notFound: { it: "comando non trovato", en: "command not found" },
   noFile: { it: "file inesistente", en: "no such file" },
@@ -51,7 +51,7 @@ const T = {
   openUsage: { it: "uso: open <chi_sono|esami|progetti|contatti|snake>", en: "usage: open <about|exams|projects|contacts|snake>" },
 };
 
-const FILES = (lang: Lang) => [lang === "it" ? "chi_sono.txt" : "about_me.txt", "esami.db", "progetti/", "snake.exe", "cazzeggio.url"];
+const FILES = (lang: Lang) => [lang === "it" ? "chi_sono.txt" : "about_me.txt", "esami.db", "progetti/", "snake.exe", "cazzeggio.url", lang === "it" ? "tesi.pdf" : "thesis.pdf"];
 
 export default function Terminal({ lang, setLang, openApp, onExit, onShutdown }: Props) {
   const [lines, setLines] = useState<Line[]>([{ kind: "accent", text: T.motd[lang] }]);
@@ -95,6 +95,10 @@ export default function Terminal({ lang, setLang, openApp, onExit, onShutdown }:
         } else if (arg === "esami.db") {
           EXAMS.forEach((e, i) => say(`0x${(i * 0x100).toString(16).padStart(4, "0")}  ${e.name[lang]}`));
           say(`→ ${RAM.next}`, "accent");
+        } else if (arg === "tesi.pdf" || arg === "thesis.pdf") {
+          say(`${THESIS.title} — ${THESIS.grade}`);
+          say(`→ ${lang === "it" ? "apro il PDF…" : "opening the PDF…"}`, "accent");
+          openThesis();
         } else if (arg === "cazzeggio.url") {
           say("https://cazzeggia.online");
         } else {

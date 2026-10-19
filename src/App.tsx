@@ -3,7 +3,7 @@ import DsGame from "./components/DsGame";
 import { Crosshair, OakDialog, StartScreen } from "./components/GameHud";
 import { Hotbar, StatusBars } from "./components/Survival";
 import TouchControls from "./components/TouchControls";
-import { GAME, PARTS, ROUTE_IDS, UI, type Lang, type RouteId } from "./content";
+import { GAME, PARTS, ROUTE_IDS, UI, openThesis, type Lang, type RouteId } from "./content";
 import { RoomWorld, SLOTS, type ItemId, type Slot } from "./game/RoomWorld";
 import RingoliOS from "./os/RingoliOS";
 
@@ -154,6 +154,11 @@ export default function App() {
         onDialog: () => {
           w.setBlocked(true);
           setDialog(true);
+        },
+        onOpenThesis: () => {
+          // la nuova scheda fa perdere il mouse: al ritorno basta un clic
+          expectUnlock.current = true;
+          openThesis();
         },
         onPlayDs: () => {
           expectUnlock.current = true;
