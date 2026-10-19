@@ -112,8 +112,8 @@ export const CPU = {
   kicker: { it: "CPU · Core 0 · Chi sono", en: "CPU · Core 0 · About me" },
   title: "Roberto Ringoli",
   lead: {
-    it: "Laureato in Informatica all’Università degli Studi dell’Aquila con 109/110, nato a San Severo e cresciuto a Lanciano, in Abruzzo.",
-    en: "Computer Science graduate (109/110) from the University of L’Aquila, born in San Severo and raised in Lanciano, Abruzzo.",
+    it: "Laureato in Informatica all’Università degli Studi dell’Aquila con 109/110, ora studente della laurea magistrale in Informatica AICoNDA. Nato a San Severo e cresciuto a Lanciano, in Abruzzo.",
+    en: "Computer Science graduate (109/110) from the University of L’Aquila, now a student of the AICoNDA master’s degree in Computer Science. Born in San Severo and raised in Lanciano, Abruzzo.",
   },
   specs: [
     { k: { it: "Modello", en: "Model" }, v: { it: "Ringoli Core R-05", en: "Ringoli Core R-05" } },
@@ -123,7 +123,7 @@ export const CPU = {
     { k: { it: "Firmware", en: "Firmware" }, v: { it: "Liceo scientifico", en: "Scientific high school" } },
     { k: { it: "Set di istruzioni", en: "Instruction set" }, v: { it: "Informatica · AI · 3D", en: "CS · AI · 3D" } },
     { k: { it: "Laurea", en: "Degree" }, v: { it: "Informatica · 109/110", en: "Computer Science · 109/110" } },
-    { k: { it: "Prossimo upgrade", en: "Next upgrade" }, v: { it: "Magistrale AICoNDA", en: "AICoNDA master’s" } },
+    { k: { it: "Upgrade in corso", en: "Upgrade in progress" }, v: { it: "Magistrale in Informatica AICoNDA", en: "AICoNDA master’s in Computer Science" } },
   ],
   cores: [
     {
@@ -136,8 +136,8 @@ export const CPU = {
     {
       title: { it: "Studi", en: "Studies" },
       body: {
-        it: "Dopo il liceo scientifico, la laurea in Informatica all’Università dell’Aquila, al polo di Coppito, con 109/110 e una tesi sul rilevamento di eventi complessi nella videosorveglianza.",
-        en: "After scientific high school, a Computer Science degree at the University of L’Aquila, Coppito campus, with 109/110 and a thesis on complex event detection in video surveillance.",
+        it: "Dopo il liceo scientifico, la laurea in Informatica all’Università dell’Aquila, al polo di Coppito, con 109/110 e una tesi sul rilevamento di eventi complessi nella videosorveglianza. Ora frequento la magistrale in Informatica AICoNDA.",
+        en: "After scientific high school, a Computer Science degree at the University of L’Aquila, Coppito campus, with 109/110 and a thesis on complex event detection in video surveillance. I’m now enrolled in the AICoNDA master’s in Computer Science.",
       },
     },
     {
@@ -198,11 +198,11 @@ export const RAM = {
     en: "Some of the exams passed along the way.",
   },
   written: { it: "SCRITTO", en: "WRITTEN" },
-  nextTitle: { it: "Prossima allocazione", en: "Next allocation" },
+  nextTitle: { it: "Allocazione in corso", en: "Current allocation" },
   next: "AICoNDA — Artificial Intelligence, Complex Networks, and Data Analytics",
   nextBody: {
-    it: "Conclusa la triennale con 109/110, punto alla laurea magistrale in AICoNDA.",
-    en: "With my bachelor’s done (109/110), I’m aiming for the AICoNDA master’s degree.",
+    it: "Dopo la triennale chiusa con 109/110, ora frequento la laurea magistrale in Informatica AICoNDA.",
+    en: "After my bachelor’s (109/110), I’m now enrolled in the AICoNDA master’s degree in Computer Science.",
   },
   allocating: { it: "ALLOCAZIONE IN CORSO", en: "ALLOCATING" },
 };

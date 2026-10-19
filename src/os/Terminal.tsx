@@ -42,8 +42,8 @@ const T = {
     ],
   },
   whoami: {
-    it: "roberto — laureato in Informatica (109/110) @ Università dell'Aquila · Lanciano, Abruzzo",
-    en: "roberto — Computer Science graduate (109/110) @ University of L'Aquila · Lanciano, Abruzzo",
+    it: "roberto — studente della magistrale in Informatica AICoNDA, laureato in Informatica (109/110) @ Università dell'Aquila · Lanciano, Abruzzo",
+    en: "roberto — AICoNDA master’s student in Computer Science, CS graduate (109/110) @ University of L'Aquila · Lanciano, Abruzzo",
   },
   notFound: { it: "comando non trovato", en: "command not found" },
   noFile: { it: "file inesistente", en: "no such file" },
